@@ -67,7 +67,7 @@ struct EntryEditor: View {
                     }
                 }
             }
-            .onChange(of: photoItem) { _, item in
+            .onChange(of: photoItem) { item in
                 guard let item else { return }
                 Task {
                     if let data = try? await item.loadTransferable(type: Data.self),
