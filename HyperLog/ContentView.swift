@@ -51,6 +51,7 @@ struct ContentView: View {
                         entries.insert(new, at: 0)
                         EntryStore.save(entries)
                     }
+                    showNew = false   // 🔴关 sheet——回调里不关 isPresented=按钮"无反应"（GrindSnore 同坑，横向补修）
                 }
             }
         }
