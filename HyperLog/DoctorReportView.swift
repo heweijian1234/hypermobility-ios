@@ -1,4 +1,5 @@
 import SwiftUI
+import MessageUI
 
 // MARK: - 报告分享（健哥 11-04 令：医生报告→报告分享；只留 PDF+内容说明）
 struct PDFAttachment: Identifiable {
