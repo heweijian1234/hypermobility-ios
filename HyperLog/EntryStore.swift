@@ -1,38 +1,38 @@
 import Foundation
 import UIKit
 
-// MARK: - 关节记录模型（hypermobility/EDS 人群：部位+严重度+文字+照片）
+// MARK: - 关节记录模型（hypermobility/EDS 人群：部位+严重度+文字+照片）——测试期中文版
 
 struct JointEntry: Codable, Identifiable {
     let id: UUID
     var date: Date
-    var bodyPart: String        // knee/shoulder/finger/hip/back/ankle/wrist/neck/other
+    var bodyPart: String        // knee/shoulder/finger/hip/back/ankle/wrist/neck/jaw/other（存键不改，显示走中文名）
     var severity: Int           // 0-3
     var notes: String
     var photoFile: String?      // 沙盒文件名（不带路径）
 
     var severityLabel: String {
         switch severity {
-        case 0: return "Mild"
-        case 1: return "Moderate"
-        case 2: return "Significant"
-        default: return "Severe"
+        case 0: return "轻微"
+        case 1: return "中等"
+        case 2: return "明显"
+        default: return "严重（半脱位/脱位）"
         }
     }
 }
 
 enum EntryStore {
-    static let bodyParts: [(key: String, label: String, icon: String)] = [
-        ("knee", "Knee", "person.fill"),
-        ("shoulder", "Shoulder", "figure.arms.open"),
-        ("finger", "Fingers", "hand.raised.fill"),
-        ("hip", "Hip", "figure.stand"),
-        ("back", "Back", "figure.stand.line.dotted.figure"),
-        ("ankle", "Ankle", "figure.walk"),
-        ("wrist", "Wrist", "hand.draw.fill"),
-        ("neck", "Neck", "person.bust"),
-        ("jaw", "Jaw", "mouth.fill"),
-        ("other", "Other", "circle"),
+    static let bodyParts: [(key: String, label: String)] = [
+        ("knee", "膝盖"),
+        ("shoulder", "肩膀"),
+        ("finger", "手指"),
+        ("hip", "髋部"),
+        ("back", "背部"),
+        ("ankle", "脚踝"),
+        ("wrist", "手腕"),
+        ("neck", "颈部"),
+        ("jaw", "下巴"),
+        ("other", "其他"),
     ]
 
     static var directory: URL {

@@ -14,8 +14,8 @@ struct EntryEditor: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Which joint / area?") {
-                    Picker("Area", selection: $bodyPart) {
+                Section("哪个关节/部位？") {
+                    Picker("部位", selection: $bodyPart) {
                         ForEach(EntryStore.bodyParts, id: \.key) { part in
                             Text(part.label).tag(part.key)
                         }
@@ -23,22 +23,22 @@ struct EntryEditor: View {
                     .pickerStyle(.inline)
                     .labelsHidden()
                 }
-                Section("How significant?") {
-                    Picker("Severity", selection: $severity) {
-                        Text("Mild").tag(0)
-                        Text("Moderate").tag(1)
-                        Text("Significant").tag(2)
-                        Text("Severe (subluxation/dislocation)").tag(3)
+                Section("程度如何？") {
+                    Picker("程度", selection: $severity) {
+                        Text("轻微").tag(0)
+                        Text("中等").tag(1)
+                        Text("明显").tag(2)
+                        Text("严重（半脱位/脱位）").tag(3)
                     }
                     .pickerStyle(.segmented)
                 }
-                Section("Notes") {
-                    TextField("What happened, how it feels, what you were doing…", text: $notes, axis: .vertical)
+                Section("备注") {
+                    TextField("什么情况、什么感觉、当时在干什么……", text: $notes, axis: .vertical)
                         .lineLimit(3...6)
                 }
-                Section("Photo (optional)") {
+                Section("照片（选填）") {
                     PhotosPicker(selection: $photoItem, matching: .images) {
-                        Label(photoImage == nil ? "Choose from library" : "Replace photo", systemImage: "photo.on.rectangle")
+                        Label(photoImage == nil ? "从相册选择" : "换一张", systemImage: "photo.on.rectangle")
                     }
                     if let img = photoImage {
                         Image(uiImage: img)
@@ -48,14 +48,14 @@ struct EntryEditor: View {
                     }
                 }
             }
-            .navigationTitle("New entry")
+            .navigationTitle("新记录")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { onSave(nil) }
+                    Button("取消") { onSave(nil) }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
+                    Button("保存") {
                         let id = UUID()
                         var file: String?
                         if let img = photoImage {
