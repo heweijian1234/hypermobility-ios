@@ -1,11 +1,15 @@
 import SwiftUI
 
 // MARK: - 报告分享（健哥 11-04 令：医生报告→报告分享；只留 PDF+内容说明）
+struct PDFAttachment: Identifiable {
+    let id = UUID()
+    let data: Data?
+}
+
 struct DoctorReportView: View {
     @State private var range = 1   // 0=7天 1=30天 2=全部
     @State private var entries: [JointEntry] = EntryStore.load()
-    @State private var showMail = false
-    @State private var pdfURL: URL?
+    @State private var pdfData: PDFAttachment?
 
     private var ranged: [JointEntry] {
         switch range {
@@ -45,9 +49,15 @@ struct DoctorReportView: View {
 
             Section {
                 Button {
-                    if let url = makePDF() {
-                        pdfURL = url
-                        showMail = true
+                    guard let url = makePDF() else { return }
+                    if MFMailComposeViewController.canSendMail() {
+                        pdfData = PDFAttachment(data: try? Data(contentsOf: url))
+                    } else {
+                        // 未配系统邮件账户（国内常见）——直接走分享面板（QQ邮箱/Gmail/Outlook 全在里面）
+                        let av = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+                        UIApplication.shared.connectedScenes
+                            .compactMap { ($0 as? UIWindowScene)?.keyWindow?.rootViewController }
+                            .first?.present(av, animated: true)
                     }
                 } label: {
                     Label("邮件发送给医生", systemImage: "envelope.fill")
@@ -67,15 +77,15 @@ struct DoctorReportView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
-                Text("PDF 包含：发作统计（总次数/各部位次数/严重发作/就医次数）＋ 图表（部位条形图/每日趋势）＋ 逐条明细（时间/部位/程度/疼多久/怎么处理/照片/备注）＋ 最近 Beighton 自评分")
+                Text("PDF 包含：发作统计（总次数/各部位/严重/就医）＋ 图表（部位条形图/每日趋势）＋ 最近 Beighton 分 ＋ 逐条明细（时间/部位/程度/疼多久/怎么处理/诱因/照片/备注）")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
         }
         .navigationTitle("报告分享")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showMail) {
-            if let url = pdfURL, let data = try? Data(contentsOf: url) {
+        .sheet(item: $pdfData) { attachment in
+            if let data = attachment.data {
                 PDFMailComposer(attachment: data, filename: "HyperLog报告.pdf")
             }
         }
@@ -133,6 +143,11 @@ struct DoctorReportView: View {
                 at: CGPoint(x: 40, y: 36),
                 withAttributes: [.font: UIFont.boldSystemFont(ofSize: 18), .foregroundColor: purple])
             let sub = "范围：\(range == 0 ? "最近7天" : range == 1 ? "最近30天" : "全部") · 共 \(ranged.count) 次发作 · 严重 \(ranged.filter { $0.severity >= 3 }.count) 次 · 就医复位 \(ranged.filter { $0.treatment == "hospital" }.count) 次"
+            if let b = ranged.compactMap(\.beighton).last {
+                ("最近 Beighton 自评：\(b)/9" as NSString).draw(
+                    at: CGPoint(x: 40, y: 76),
+                    withAttributes: [.font: UIFont.boldSystemFont(ofSize: 12), .foregroundColor: purple])
+            }
             (sub as NSString).draw(
                 at: CGPoint(x: 40, y: 62),
                 withAttributes: [.font: UIFont.systemFont(ofSize: 10), .foregroundColor: UIColor.darkGray])
@@ -206,6 +221,13 @@ struct DoctorReportView: View {
                     at: CGPoint(x: 40, y: y),
                     withAttributes: [.font: UIFont.systemFont(ofSize: 9), .foregroundColor: UIColor.black])
                 y += 13
+                if !e.triggers.isEmpty {
+                    let tr = e.triggers.compactMap { k in EntryStore.triggerOptions.first(where: { $0.key == k })?.label }.joined(separator: "、")
+                    ("诱因：\(tr)" as NSString).draw(
+                        at: CGPoint(x: 52, y: y),
+                        withAttributes: [.font: UIFont.systemFont(ofSize: 8), .foregroundColor: UIColor.darkGray])
+                    y += 12
+                }
                 if !e.notes.isEmpty {
                     ("备注：\(e.notes)" as NSString).draw(
                         in: CGRect(x: 52, y: y, width: 480, height: 24),
