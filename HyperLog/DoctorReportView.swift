@@ -7,11 +7,10 @@ struct DoctorReportView: View {
     @State private var shareItem: String?
 
     private var ranged: [JointEntry] {
-        let cal = Calendar.current
         switch range {
-        case 0: return entries.filter { cal.isDate($0.date, withinDaysOf: 7) }
+        case 0: return entries.filter { $0.date >= Date().addingTimeInterval(-7 * 86400) }
         case 2: return entries
-        default: return entries.filter { cal.isDate($0.date, withinDaysOf: 30) }
+        default: return entries.filter { $0.date >= Date().addingTimeInterval(-30 * 86400) }
         }
     }
 
