@@ -1,14 +1,13 @@
 import SwiftUI
 import PhotosUI
 
-// MARK: - 主页：一键快记 + 时间线/分组 + 报告/自评/照片对比入口
-// 快记逻辑（P0-1）：发作时手在疼——一键落下记录（默认上次部位），疼过再补细节
+// MARK: - 主页：左下快记 / 中间＋详细记录 / 右下工具（报告分享+照片对比）
+// 布局（健哥 11-04 拍板）：＋只管详细记录；自评并入详细记录底部；其余功能右下角
 struct ContentView: View {
     @State private var entries: [JointEntry] = EntryStore.load()
     @State private var grouping = false
-    @State private var editingEntry: JointEntry?   // 补细节/编辑目标
+    @State private var editingEntry: JointEntry?
     @State private var showEditor = false
-    @State private var newFromQuick = false
 
     var body: some View {
         NavigationStack {
@@ -35,8 +34,8 @@ struct ContentView: View {
                     }
                 }
             }
+            // 左下：快记
             .overlay(alignment: .bottomLeading) {
-                // 一键快记（发作时的救命键——单手大目标）
                 Button {
                     quickLog()
                 } label: {
@@ -51,20 +50,11 @@ struct ContentView: View {
                 .padding(.leading, 16)
                 .padding(.bottom, 16)
             }
-            .overlay(alignment: .bottomTrailing) {
-                Menu {
-                    Button { newFromQuick = false; showEditor = true } label: {
-                        Label("详细记录", systemImage: "square.and.pencil")
-                    }
-                    NavigationLink { BeightonView() } label: {
-                        Label("Beighton 自评", systemImage: "checklist")
-                    }
-                    NavigationLink { DoctorReportView() } label: {
-                        Label("医生报告", systemImage: "stethoscope")
-                    }
-                    NavigationLink { PhotoCompareView() } label: {
-                        Label("照片对比", systemImage: "photo.on.rectangle.angled")
-                    }
+            // 中间：＋ 详细记录（新建——editingEntry 必须清空，此前残留=bug"只改旧记录"）
+            .overlay(alignment: .bottom) {
+                Button {
+                    editingEntry = nil
+                    showEditor = true
                 } label: {
                     Image(systemName: "plus")
                         .font(.title2.bold())
@@ -72,9 +62,41 @@ struct ContentView: View {
                         .frame(width: 56, height: 56)
                         .background(Circle().fill(Color(red: 0.55, green: 0.45, blue: 0.75)))
                 }
-                .padding(20)
+                .padding(.bottom, 12)
             }
-            .sheet(isPresented: $showEditor, onDismiss: { entries = EntryStore.load() }) {
+            // 右下：报告分享 + 照片对比
+            .overlay(alignment: .bottomTrailing) {
+                VStack(spacing: 10) {
+                    NavigationLink {
+                        PhotoCompareView()
+                    } label: {
+                        VStack(spacing: 1) {
+                            Image(systemName: "photo.on.rectangle.angled").font(.body)
+                            Text("对比").font(.system(size: 9, weight: .semibold))
+                        }
+                        .foregroundColor(.white)
+                        .frame(width: 48, height: 48)
+                        .background(Circle().fill(Color.purple.opacity(0.75)))
+                    }
+                    NavigationLink {
+                        DoctorReportView()
+                    } label: {
+                        VStack(spacing: 1) {
+                            Image(systemName: "square.and.arrow.up").font(.body)
+                            Text("分享").font(.system(size: 9, weight: .semibold))
+                        }
+                        .foregroundColor(.white)
+                        .frame(width: 48, height: 48)
+                        .background(Circle().fill(Color(red: 0.55, green: 0.45, blue: 0.75)))
+                    }
+                }
+                .padding(.trailing, 16)
+                .padding(.bottom, 16)
+            }
+            .sheet(isPresented: $showEditor, onDismiss: {
+                entries = EntryStore.load()
+                editingEntry = nil
+            }) {
                 EntryEditor(editing: editingEntry) { new in
                     if let new {
                         if let idx = entries.firstIndex(where: { $0.id == new.id }) {
@@ -101,6 +123,15 @@ struct ContentView: View {
         UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
 
+    /// 左滑删除（含照片文件清理）
+    private func delete(_ entry: JointEntry) {
+        if let file = entry.photoFile {
+            try? FileManager.default.removeItem(at: EntryStore.photoURL(file))
+        }
+        entries.removeAll { $0.id == entry.id }
+        EntryStore.save(entries)
+    }
+
     private var emptyView: some View {
         VStack(spacing: 14) {
             Spacer()
@@ -109,7 +140,7 @@ struct ContentView: View {
                 .foregroundColor(.purple)
             Text("记录你的关节")
                 .font(.headline)
-            Text("发作时点左下角「快记」一键落下，疼过再补细节；平时从右下角详细记录。")
+            Text("发作时点左下角「快记」一键落下，疼过再补细节；平时点中间「＋」详细记录。")
                 .font(.footnote)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -119,14 +150,23 @@ struct ContentView: View {
     }
 
     private var timelineList: some View {
-        List(entries) { entry in
-            Button {
-                editingEntry = entry
-                showEditor = true
-            } label: {
-                EntryRow(entry: entry)
+        List {
+            ForEach(entries) { entry in
+                Button {
+                    editingEntry = entry
+                    showEditor = true
+                } label: {
+                    EntryRow(entry: entry)
+                }
+                .buttonStyle(.plain)
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    Button(role: .destructive) {
+                        delete(entry)
+                    } label: {
+                        Label("删除", systemImage: "trash")
+                    }
+                }
             }
-            .buttonStyle(.plain)
         }
         .listStyle(.plain)
     }
@@ -141,6 +181,13 @@ struct ContentView: View {
                             showEditor = true
                         } label: { EntryRow(entry: e) }
                         .buttonStyle(.plain)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                delete(e)
+                            } label: {
+                                Label("删除", systemImage: "trash")
+                            }
+                        }
                     }
                 }
             }

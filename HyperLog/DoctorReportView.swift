@@ -1,10 +1,9 @@
 import SwiftUI
 
-// MARK: - 给医生的范围报告（P0-3：范围选择+汇总；P2-7：PDF 生成）
+// MARK: - 报告分享（健哥 11-04 令：医生报告→报告分享；只留 PDF+内容说明）
 struct DoctorReportView: View {
     @State private var range = 1   // 0=7天 1=30天 2=全部
     @State private var entries: [JointEntry] = EntryStore.load()
-    @State private var shareItem: String?
 
     private var ranged: [JointEntry] {
         switch range {
@@ -23,7 +22,7 @@ struct DoctorReportView: View {
             }
             .pickerStyle(.segmented)
 
-            Section("概览（给医生看）") {
+            Section("预览（PDF 里就是这些）") {
                 statRow("发作总次数", "\(ranged.count) 次")
                 statRow("涉及部位", "\(EntryStore.grouped(ranged).count) 个")
                 if let top = EntryStore.grouped(ranged).first {
@@ -33,12 +32,9 @@ struct DoctorReportView: View {
                 statRow("严重发作（半脱位/脱位）", "\(severe) 次")
                 let hospital = ranged.filter { $0.treatment == "hospital" }.count
                 statRow("去医院复位", "\(hospital) 次")
-            }
-
-            Section("按部位") {
                 ForEach(EntryStore.grouped(ranged), id: \.part) { g in
                     HStack {
-                        Text(g.label)
+                        Text("【\(g.label)】").foregroundColor(.secondary)
                         Spacer()
                         Text("\(g.count) 次").foregroundColor(.purple)
                     }
@@ -46,12 +42,6 @@ struct DoctorReportView: View {
             }
 
             Section {
-                ShareLink(item: textReport, subject: Text("HyperLog 关节报告")) {
-                    Label("分享报告（文字版）", systemImage: "square.and.arrow.up")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.purple)
                 Button {
                     if let url = makePDF() {
                         let av = UIActivityViewController(activityItems: [url], applicationActivities: nil)
@@ -60,13 +50,17 @@ struct DoctorReportView: View {
                             .first?.present(av, animated: true)
                     }
                 } label: {
-                    Label("导出 PDF（给医生）", systemImage: "doc.richtext")
+                    Label("导出 PDF", systemImage: "doc.richtext")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.borderedProminent)
+                .tint(.purple)
+                Text("PDF 包含：发作统计（总次数/各部位次数/严重发作/就医次数）＋ 逐条明细（时间/部位/程度/疼多久/怎么处理/备注）＋ 最近 Beighton 自评分")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
         }
-        .navigationTitle("医生报告")
+        .navigationTitle("报告分享")
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -81,6 +75,8 @@ struct DoctorReportView: View {
     private var textReport: String {
         var lines = ["HyperLog 关节发作报告"]
         lines.append("范围：\(range == 0 ? "最近7天" : range == 1 ? "最近30天" : "全部") · 共 \(ranged.count) 次发作")
+        lines.append("严重发作（半脱位/脱位）：\(ranged.filter { $0.severity >= 3 }.count) 次")
+        lines.append("去医院复位：\(ranged.filter { $0.treatment == "hospital" }.count) 次")
         lines.append("")
         for g in EntryStore.grouped(ranged) {
             lines.append("【\(g.label)】\(g.count) 次")
@@ -100,7 +96,7 @@ struct DoctorReportView: View {
         return lines.joined(separator: "\n")
     }
 
-    /// 简版 PDF：概览+按部位统计（P2-7；付费墙上线时再锁）
+    /// PDF：概览+按部位统计+逐条明细+Beighton
     private func makePDF() -> URL? {
         let pageRect = CGRect(x: 0, y: 0, width: 595, height: 842) // A4 72dpi
         let renderer = UIGraphicsPDFRenderer(bounds: pageRect)

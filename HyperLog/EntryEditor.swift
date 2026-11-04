@@ -16,6 +16,7 @@ struct EntryEditor: View {
     @State private var photoItem: PhotosPickerItem?
     @State private var photoImage: UIImage?
     @State private var keepPhotoFile: String?
+    @State private var showCamera = false
 
     var body: some View {
         NavigationStack {
@@ -78,9 +79,17 @@ struct EntryEditor: View {
                         .lineLimit(3...6)
                 }
                 Section("照片（选填）") {
-                    PhotosPicker(selection: $photoItem, matching: .images) {
-                        Label(photoImage == nil && keepPhotoFile == nil ? "从相册选择" : "换一张", systemImage: "photo.on.rectangle")
+                    HStack(spacing: 24) {
+                        Button {
+                            showCamera = true
+                        } label: {
+                            Label("拍照", systemImage: "camera.fill")
+                        }
+                        PhotosPicker(selection: $photoItem, matching: .images) {
+                            Label("相册", systemImage: "photo.on.rectangle")
+                        }
                     }
+                    .buttonStyle(.borderless)
                     if let img = photoImage {
                         Image(uiImage: img)
                             .resizable().scaledToFit()
@@ -92,6 +101,21 @@ struct EntryEditor: View {
                             .resizable().scaledToFit()
                             .frame(maxHeight: 220)
                             .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                }
+                Section("Beighton 自评（选填）") {
+                    if let b = EntryStore.loadBeighton().first {
+                        HStack {
+                            Text("最近自评").foregroundColor(.secondary)
+                            Spacer()
+                            Text("\(b.score) / 9（\(b.date.formatted(.dateTime.month().day()))）")
+                                .bold().foregroundColor(.purple)
+                        }
+                    }
+                    NavigationLink {
+                        BeightonView()
+                    } label: {
+                        Label("去做 Beighton 自评", systemImage: "checklist")
                     }
                 }
             }
@@ -125,6 +149,9 @@ struct EntryEditor: View {
                 }
             }
             .onAppear(perform: loadExisting)
+            .sheet(isPresented: $showCamera) {
+                CameraPicker(image: $photoImage)
+            }
             .onChange(of: photoItem) { item in
                 guard let item else { return }
                 Task {
