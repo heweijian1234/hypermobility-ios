@@ -9,7 +9,8 @@ struct JointEntry: Codable, Identifiable {
     var bodyPart: String        // knee/shoulder/...（存键，显示走中文名）
     var severity: Int           // 0-3（患者自然语言分档，医学换算留给医生——健哥 11-04 拍板）
     var notes: String
-    var photoFile: String?
+    var photoFile: String?    // 旧单张字段（读入迁移用）
+    var photoFiles: [String]? // 多张（健哥 11-04 令）
     // 11-04 增量（健哥拍板 P0/P1/P2 + 疼痛持续时间）
     var painDuration: String?   // 疼痛持续时间（选项）
     var treatment: String?      // self复位/医院复位/未复位
@@ -97,12 +98,22 @@ enum EntryStore {
     static func load() -> [JointEntry] {
         let url = directory.appendingPathComponent("entries.json")
         guard let data = try? Data(contentsOf: url),
-              let list = try? JSONDecoder().decode([JointEntry].self, from: data) else { return [] }
+              var list = try? JSONDecoder().decode([JointEntry].self, from: data) else { return [] }
+        // 旧单张迁移并入多张
+        var migrated = false
+        for i in list.indices {
+            if let single = list[i].photoFile {
+                if list[i].photoFiles == nil { list[i].photoFiles = [single] }
+                list[i].photoFile = nil
+                migrated = true
+            }
+        }
+        if migrated { save(list) }
         return list.sorted { $0.date > $1.date }
     }
 
-    static func savePhoto(_ image: UIImage, for id: UUID) -> String? {
-        let name = "photo-\(id.uuidString).jpg"
+    static func savePhoto(_ image: UIImage, for id: UUID, index: Int) -> String? {
+        let name = "photo-\(id.uuidString)-\(index).jpg"
         let url = photoDir.appendingPathComponent(name)
         guard let data = image.jpegData(compressionQuality: 0.75) else { return nil }
         do { try data.write(to: url); return name } catch { return nil }

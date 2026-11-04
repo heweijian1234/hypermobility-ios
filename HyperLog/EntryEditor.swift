@@ -1,7 +1,7 @@
 import SwiftUI
 import PhotosUI
 
-// MARK: - 条目编辑：新建/补细节/编辑（部位/程度/疼痛持续/处置/诱因/备注/照片）
+// MARK: - 条目编辑：新建/补细节/编辑（部位/程度/疼痛持续/处置/诱因/备注/多张照片/Beighton）
 struct EntryEditor: View {
     /// nil=新建；有值=编辑这条（一键快记的"补细节"就是编辑模式）
     var editing: JointEntry?
@@ -13,9 +13,9 @@ struct EntryEditor: View {
     @State private var treatment: String?
     @State private var triggers: Set<String> = []
     @State private var notes = ""
-    @State private var photoItem: PhotosPickerItem?
-    @State private var photoImage: UIImage?
-    @State private var keepPhotoFile: String?
+    @State private var pickerItems: [PhotosPickerItem] = []
+    @State private var newImages: [UIImage] = []      // 本次新选/新拍的
+    @State private var keepFiles: [String] = []       // 保留的已有文件
     @State private var showCamera = false
     @State private var beightonChecks: [Bool] = []
 
@@ -81,30 +81,19 @@ struct EntryEditor: View {
                     TextField("什么情况、什么感觉、当时在干什么……", text: $notes, axis: .vertical)
                         .lineLimit(6...12)
                 }
-                Section("照片（选填）") {
+                Section("照片（可多张）") {
                     HStack(spacing: 24) {
                         Button {
                             showCamera = true
                         } label: {
                             Label("拍照", systemImage: "camera.fill")
                         }
-                        PhotosPicker(selection: $photoItem, matching: .images) {
-                            Label("相册", systemImage: "photo.on.rectangle")
+                        PhotosPicker(selection: $pickerItems, maxSelectionCount: 9, matching: .images) {
+                            Label("相册（可多选）", systemImage: "photo.on.rectangle")
                         }
                     }
                     .buttonStyle(.borderless)
-                    if let img = photoImage {
-                        Image(uiImage: img)
-                            .resizable().scaledToFit()
-                            .frame(maxHeight: 220)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                    } else if let file = keepPhotoFile,
-                              let img = UIImage(contentsOfFile: EntryStore.photoURL(file).path) {
-                        Image(uiImage: img)
-                            .resizable().scaledToFit()
-                            .frame(maxHeight: 220)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                    }
+                    photoGrid
                 }
                 Section("Beighton 自评（选填，随本条保存）") {
                     ForEach(Array(BeightonItems.all.enumerated()), id: \.offset) { i, item in
@@ -135,44 +124,100 @@ struct EntryEditor: View {
                     Button("取消") { onSave(nil) }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") {
-                        let id = editing?.id ?? UUID()
-                        var file = keepPhotoFile
-                        if let img = photoImage {
-                            file = EntryStore.savePhoto(img, for: id)
-                        }
-                        let anyChecked = beightonChecks.contains { $0 }
-                        let entry = JointEntry(
-                            id: id,
-                            date: editing?.date ?? Date(),
-                            bodyPart: bodyPart,
-                            severity: severity,
-                            notes: notes,
-                            photoFile: file,
-                            painDuration: painDuration ?? "minutes",
-                            treatment: treatment ?? "none",
-                            triggers: Array(triggers),
-                            quick: false,   // 补完细节不再是快记
-                            beighton: anyChecked ? beightonScore : nil
-                        )
-                        onSave(entry)
-                    }
+                    Button("保存") { save() }
                 }
             }
             .onAppear(perform: loadExisting)
             .sheet(isPresented: $showCamera) {
-                CameraPicker(image: $photoImage)
+                CameraPicker(image: Binding(
+                    get: { nil },
+                    set: { if let img = $0 { newImages.append(img) } }
+                ))
             }
-            .onChange(of: photoItem) { item in
-                guard let item else { return }
+            .onChange(of: pickerItems) { items in
+                guard !items.isEmpty else { return }
                 Task {
-                    if let data = try? await item.loadTransferable(type: Data.self),
-                       let img = UIImage(data: data) {
-                        photoImage = img
+                    var imgs: [UIImage] = []
+                    for item in items {
+                        if let data = try? await item.loadTransferable(type: Data.self),
+                           let img = UIImage(data: data) {
+                            imgs.append(img)
+                        }
                     }
+                    newImages.append(contentsOf: imgs)
+                    pickerItems = []
                 }
             }
         }
+    }
+
+    /// 已有照片（文件）+ 新选（内存）混排；右上小×删除
+    @ViewBuilder
+    private var photoGrid: some View {
+        let total = keepFiles.count + newImages.count
+        if total > 0 {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(Array(keepFiles.enumerated()), id: \.offset) { i, file in
+                        ZStack(alignment: .topTrailing) {
+                            if let img = UIImage(contentsOfFile: EntryStore.photoURL(file).path) {
+                                Image(uiImage: img)
+                                    .resizable().scaledToFill()
+                                    .frame(width: 72, height: 72)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                            }
+                            removeButton { keepFiles.remove(at: i) }
+                        }
+                    }
+                    ForEach(Array(newImages.enumerated()), id: \.offset) { i, img in
+                        ZStack(alignment: .topTrailing) {
+                            Image(uiImage: img)
+                                .resizable().scaledToFill()
+                                .frame(width: 72, height: 72)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                            removeButton { newImages.remove(at: i) }
+                        }
+                    }
+                }
+            }
+            .frame(height: 84)
+        }
+    }
+
+    private func removeButton(_ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: "xmark.circle.fill")
+                .font(.caption)
+                .foregroundColor(.white)
+                .background(Circle().fill(Color.black.opacity(0.55)))
+        }
+        .padding(3)
+    }
+
+    private func save() {
+        let id = editing?.id ?? UUID()
+        var files = keepFiles
+        for (i, img) in newImages.enumerated() {
+            if let name = EntryStore.savePhoto(img, for: id, index: files.count + i) {
+                files.append(name)
+            }
+        }
+        let anyChecked = beightonChecks.contains { $0 }
+        let entry = JointEntry(
+            id: id,
+            date: editing?.date ?? Date(),
+            bodyPart: bodyPart,
+            severity: severity,
+            notes: notes,
+            photoFile: nil,
+            photoFiles: files.isEmpty ? nil : files,
+            painDuration: painDuration ?? "minutes",
+            treatment: treatment ?? "none",
+            triggers: Array(triggers),
+            quick: false,
+            beighton: anyChecked ? beightonScore : nil
+        )
+        onSave(entry)
     }
 
     private func loadExisting() {
@@ -183,11 +228,11 @@ struct EntryEditor: View {
         treatment = e.treatment
         triggers = Set(e.triggers)
         notes = e.notes
-        keepPhotoFile = e.photoFile
+        keepFiles = e.photoFiles ?? []
         if let b = e.beighton {
             var checks = Array(repeating: false, count: 9)
             for i in 0..<min(b, 9) { checks[i] = true }
-            beightonChecks = checks   // 旧数据只有总分：恢复前 N 项勾选（编辑时可改）
+            beightonChecks = checks
         }
     }
 }

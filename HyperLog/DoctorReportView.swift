@@ -4,6 +4,8 @@ import SwiftUI
 struct DoctorReportView: View {
     @State private var range = 1   // 0=7天 1=30天 2=全部
     @State private var entries: [JointEntry] = EntryStore.load()
+    @State private var showMail = false
+    @State private var pdfURL: URL?
 
     private var ranged: [JointEntry] {
         switch range {
@@ -44,24 +46,39 @@ struct DoctorReportView: View {
             Section {
                 Button {
                     if let url = makePDF() {
+                        pdfURL = url
+                        showMail = true
+                    }
+                } label: {
+                    Label("邮件发送给医生", systemImage: "envelope.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.purple)
+                Button {
+                    if let url = makePDF() {
                         let av = UIActivityViewController(activityItems: [url], applicationActivities: nil)
                         UIApplication.shared.connectedScenes
                             .compactMap { ($0 as? UIWindowScene)?.keyWindow?.rootViewController }
                             .first?.present(av, animated: true)
                     }
                 } label: {
-                    Label("导出 PDF", systemImage: "doc.richtext")
+                    Label("其他方式分享（Gmail/Outlook/信息/存储）", systemImage: "square.and.arrow.up")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.purple)
-                Text("PDF 包含：发作统计（总次数/各部位次数/严重发作/就医次数）＋ 逐条明细（时间/部位/程度/疼多久/怎么处理/备注）＋ 最近 Beighton 自评分")
+                .buttonStyle(.bordered)
+                Text("PDF 包含：发作统计（总次数/各部位次数/严重发作/就医次数）＋ 图表（部位条形图/每日趋势）＋ 逐条明细（时间/部位/程度/疼多久/怎么处理/照片/备注）＋ 最近 Beighton 自评分")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
         }
         .navigationTitle("报告分享")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showMail) {
+            if let url = pdfURL, let data = try? Data(contentsOf: url) {
+                PDFMailComposer(attachment: data, filename: "HyperLog报告.pdf")
+            }
+        }
     }
 
     private func statRow(_ k: String, _ v: String) -> some View {
@@ -169,12 +186,51 @@ struct DoctorReportView: View {
             }
             y += chartH + 18
 
-            // 明细文字（第二栏起）
-            let attrs: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: 10),
-                .foregroundColor: UIColor.black,
-            ]
-            (textReport as NSString).draw(in: CGRect(x: 40, y: y, width: 515, height: 842 - y - 40), withAttributes: attrs)
+            // 逐条明细（含照片小图，自动翻页）
+            ("逐条明细" as NSString).draw(
+                at: CGPoint(x: 40, y: y),
+                withAttributes: [.font: UIFont.boldSystemFont(ofSize: 12), .foregroundColor: UIColor.black])
+            y += 16
+            for e in ranged.prefix(80) {
+                // 翻页检查（每条至少需要 34pt；带照片 100pt）
+                let photos = (e.photoFiles ?? []).compactMap { UIImage(contentsOfFile: EntryStore.photoURL($0).path) }
+                let need: CGFloat = photos.isEmpty ? 18 : 14 + CGFloat((photos.count + 3) / 4) * 66
+                if y + need > 802 {
+                    ctx.beginPage()
+                    y = 40
+                }
+                var line = "\(e.date.formatted(.dateTime.month().day().hour().minute())) · \(EntryStore.bodyParts.first(where: { $0.key == e.bodyPart })?.label ?? e.bodyPart) · \(e.severityLabel)"
+                if !e.painDurationLabel.isEmpty { line += " · 疼\(e.painDurationLabel)" }
+                if !e.treatmentLabel.isEmpty { line += " · \(e.treatmentLabel)" }
+                (line as NSString).draw(
+                    at: CGPoint(x: 40, y: y),
+                    withAttributes: [.font: UIFont.systemFont(ofSize: 9), .foregroundColor: UIColor.black])
+                y += 13
+                if !e.notes.isEmpty {
+                    ("备注：\(e.notes)" as NSString).draw(
+                        in: CGRect(x: 52, y: y, width: 480, height: 24),
+                        withAttributes: [.font: UIFont.systemFont(ofSize: 8), .foregroundColor: UIColor.darkGray])
+                    y += 14
+                }
+                for (i, img) in photos.prefix(8).enumerated() {
+                    let col = i % 4
+                    let x = 52 + CGFloat(col) * 66
+                    if col == 0 && i > 0 { y += 66 }
+                    let rect = CGRect(x: x, y: y, width: 60, height: 60)
+                    cg.saveGState()
+                    cg.clip(to: rect)
+                    img.draw(in: rect)
+                    cg.restoreGState()
+                }
+                if !photos.isEmpty { y += 66 + 6 }
+                if let b = e.beighton {
+                    ("Beighton：\(b)/9" as NSString).draw(
+                        at: CGPoint(x: 52, y: y),
+                        withAttributes: [.font: UIFont.systemFont(ofSize: 8), .foregroundColor: purple])
+                    y += 12
+                }
+                y += 4
+            }
         }
         return url
     }

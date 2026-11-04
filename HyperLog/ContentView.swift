@@ -116,8 +116,8 @@ struct ContentView: View {
     private func quickLog() {
         let lastPart = entries.first?.bodyPart ?? "knee"
         let entry = JointEntry(id: UUID(), date: Date(), bodyPart: lastPart,
-                               severity: 2, notes: "", photoFile: nil,
-                               painDuration: nil, treatment: nil, triggers: [], quick: true)
+                               severity: 2, notes: "", photoFile: nil, photoFiles: nil,
+                               painDuration: nil, treatment: nil, triggers: [], quick: true, beighton: nil)
         entries.insert(entry, at: 0)
         EntryStore.save(entries)
         UINotificationFeedbackGenerator().notificationOccurred(.success)
@@ -125,7 +125,7 @@ struct ContentView: View {
 
     /// 左滑删除（含照片文件清理）
     private func delete(_ entry: JointEntry) {
-        if let file = entry.photoFile {
+        for file in entry.photoFiles ?? [] {
             try? FileManager.default.removeItem(at: EntryStore.photoURL(file))
         }
         entries.removeAll { $0.id == entry.id }
@@ -199,12 +199,21 @@ struct EntryRow: View {
     let entry: JointEntry
     var body: some View {
         HStack(spacing: 12) {
-            if let file = entry.photoFile,
-               let img = UIImage(contentsOfFile: EntryStore.photoURL(file).path) {
+            if let files = entry.photoFiles, !files.isEmpty,
+               let img = UIImage(contentsOfFile: EntryStore.photoURL(files[0]).path) {
                 Image(uiImage: img)
                     .resizable().scaledToFill()
                     .frame(width: 52, height: 52)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(alignment: .bottomTrailing) {
+                        if files.count > 1 {
+                            Text("\(files.count)")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding(3)
+                                .background(Circle().fill(Color.purple))
+                        }
+                    }
             } else {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color.purple.opacity(0.12))
