@@ -88,33 +88,106 @@ struct DoctorReportView: View {
                 lines.append("  · " + parts.joined(separator: " · "))
             }
         }
-        if let b = EntryStore.loadBeighton().first {
+        if let b = entries.compactMap(\.beighton).last {
             lines.append("")
-            lines.append("最近 Beighton 自评：\(b.score)/9（\(b.date.formatted(.dateTime.month().day()))）")
+            lines.append("最近 Beighton 自评：\(b)/9")
         }
         lines.append("（HyperLog 患者自录——供医生参考，非诊断）")
         return lines.joined(separator: "\n")
     }
 
-    /// PDF：概览+按部位统计+逐条明细+Beighton
+    /// PDF：概览+图表（部位横条图/按日趋势竖条图）+逐条明细+Beighton——健哥 11-04 令：不能只有文字
     private func makePDF() -> URL? {
-        let pageRect = CGRect(x: 0, y: 0, width: 595, height: 842) // A4 72dpi
+        let pageRect = CGRect(x: 0, y: 0, width: 595, height: 842) // A4
         let renderer = UIGraphicsPDFRenderer(bounds: pageRect)
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("HyperLog报告.pdf")
-        let text = textReport as NSString
-        let attrs: [NSAttributedString.Key: Any] = [
-            .font: UIFont.systemFont(ofSize: 11),
-            .foregroundColor: UIColor.black,
-        ]
+        let purple = UIColor(red: 0.45, green: 0.3, blue: 0.7, alpha: 1)
+        let groups = EntryStore.grouped(ranged)
+
+        // 按日统计（范围天数内每天的发作数）
+        let days = dailyCounts()
+
         try? renderer.writePDF(to: url) { ctx in
             ctx.beginPage()
-            let titleAttrs: [NSAttributedString.Key: Any] = [
-                .font: UIFont.boldSystemFont(ofSize: 16),
-                .foregroundColor: UIColor.purple,
+            let cg = ctx.cgContext
+
+            // 标题
+            ("HyperLog 关节发作报告" as NSString).draw(
+                at: CGPoint(x: 40, y: 36),
+                withAttributes: [.font: UIFont.boldSystemFont(ofSize: 18), .foregroundColor: purple])
+            let sub = "范围：\(range == 0 ? "最近7天" : range == 1 ? "最近30天" : "全部") · 共 \(ranged.count) 次发作 · 严重 \(ranged.filter { $0.severity >= 3 }.count) 次 · 就医复位 \(ranged.filter { $0.treatment == "hospital" }.count) 次"
+            (sub as NSString).draw(
+                at: CGPoint(x: 40, y: 62),
+                withAttributes: [.font: UIFont.systemFont(ofSize: 10), .foregroundColor: UIColor.darkGray])
+
+            var y: CGFloat = 92
+
+            // 图1：各部位发作次数（横向条形）
+            ("各部位发作次数" as NSString).draw(
+                at: CGPoint(x: 40, y: y),
+                withAttributes: [.font: UIFont.boldSystemFont(ofSize: 12), .foregroundColor: UIColor.black])
+            y += 18
+            let maxCount = max(groups.map(\.count).max() ?? 1, 1)
+            for g in groups.prefix(10) {
+                let label = g.label as NSString
+                label.draw(at: CGPoint(x: 40, y: y),
+                           withAttributes: [.font: UIFont.systemFont(ofSize: 9), .foregroundColor: UIColor.darkGray])
+                let barW = CGFloat(g.count) / CGFloat(maxCount) * 380
+                cg.setFillColor(purple.cgColor)
+                cg.fill(CGRect(x: 90, y: y + 1, width: max(barW, 3), height: 10))
+                ("\(g.count)" as NSString).draw(at: CGPoint(x: 92 + max(barW, 3), y: y),
+                                                withAttributes: [.font: UIFont.systemFont(ofSize: 9), .foregroundColor: UIColor.black])
+                y += 16
+            }
+
+            y += 12
+            // 图2：按日发作趋势（竖向条形）
+            ("每日发作趋势" as NSString).draw(
+                at: CGPoint(x: 40, y: y),
+                withAttributes: [.font: UIFont.boldSystemFont(ofSize: 12), .foregroundColor: UIColor.black])
+            y += 14
+            let chartH: CGFloat = 90
+            let chartW: CGFloat = 500
+            let maxDay = max(days.map(\.1).max() ?? 1, 1)
+            let barSlot = chartW / CGFloat(max(days.count, 1))
+            cg.setStrokeColor(UIColor.lightGray.cgColor)
+            cg.strokeLineSegments(between: [CGPoint(x: 40, y: y + chartH), CGPoint(x: 40 + chartW, y: y + chartH)])
+            for (i, (day, count)) in days.enumerated() {
+                let h = CGFloat(count) / CGFloat(maxDay) * (chartH - 14)
+                let x = 40 + CGFloat(i) * barSlot + barSlot * 0.2
+                cg.setFillColor(count >= 3 ? UIColor.systemOrange.cgColor : purple.cgColor)
+                cg.fill(CGRect(x: x, y: y + chartH - max(h, count > 0 ? 3 : 0), width: barSlot * 0.6, height: max(h, count > 0 ? 3 : 0)))
+                if count > 0 {
+                    ("\(count)" as NSString).draw(at: CGPoint(x: x - 2, y: y + chartH - max(h, 3) - 10),
+                                                  withAttributes: [.font: UIFont.systemFont(ofSize: 7), .foregroundColor: UIColor.black])
+                }
+                if i % max(days.count / 8, 1) == 0 {
+                    let d = day.prefix(5)
+                    (d as NSString).draw(at: CGPoint(x: x - 4, y: y + chartH + 2),
+                                         withAttributes: [.font: UIFont.systemFont(ofSize: 6), .foregroundColor: UIColor.gray])
+                }
+            }
+            y += chartH + 18
+
+            // 明细文字（第二栏起）
+            let attrs: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 10),
+                .foregroundColor: UIColor.black,
             ]
-            ("HyperLog 关节发作报告" as NSString).draw(at: CGPoint(x: 40, y: 40), withAttributes: titleAttrs)
-            text.draw(in: CGRect(x: 40, y: 80, width: 515, height: 720), withAttributes: attrs)
+            (textReport as NSString).draw(in: CGRect(x: 40, y: y, width: 515, height: 842 - y - 40), withAttributes: attrs)
         }
         return url
+    }
+
+    /// 范围内按日 (日期串, 次数)
+    private func dailyCounts() -> [(String, Int)] {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "MM-dd"
+        var dict: [String: Int] = [:]
+        for e in ranged {
+            let k = fmt.string(from: e.date)
+            dict[k, default: 0] += 1
+        }
+        return dict.sorted { $0.key < $1.key }
     }
 }

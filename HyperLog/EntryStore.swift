@@ -15,6 +15,7 @@ struct JointEntry: Codable, Identifiable {
     var treatment: String?      // self复位/医院复位/未复位
     var triggers: [String]      // 关节版诱因
     var quick: Bool             // 一键快记（待补细节标记）
+    var beighton: Int?          // 本次记录时的 Beighton 自评分（0-9，随条目存——健哥 11-04 拍板并入）
 
     var severityLabel: String {
         switch severity {

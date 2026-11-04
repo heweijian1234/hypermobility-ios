@@ -23,5 +23,12 @@ struct AboutView: View {
         }
         .navigationTitle("关于与隐私")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                NavigationLink { FeedbackView() } label: {
+                    Label("意见反馈", systemImage: "paperplane")
+                }
+            }
+        }
     }
 }

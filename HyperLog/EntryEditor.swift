@@ -17,6 +17,9 @@ struct EntryEditor: View {
     @State private var photoImage: UIImage?
     @State private var keepPhotoFile: String?
     @State private var showCamera = false
+    @State private var beightonChecks: [Bool] = []
+
+    private var beightonScore: Int { beightonChecks.filter { $0 }.count }
 
     var body: some View {
         NavigationStack {
@@ -76,7 +79,7 @@ struct EntryEditor: View {
                 }
                 Section("备注") {
                     TextField("什么情况、什么感觉、当时在干什么……", text: $notes, axis: .vertical)
-                        .lineLimit(3...6)
+                        .lineLimit(6...12)
                 }
                 Section("照片（选填）") {
                     HStack(spacing: 24) {
@@ -103,19 +106,25 @@ struct EntryEditor: View {
                             .clipShape(RoundedRectangle(cornerRadius: 10))
                     }
                 }
-                Section("Beighton 自评（选填）") {
-                    if let b = EntryStore.loadBeighton().first {
-                        HStack {
-                            Text("最近自评").foregroundColor(.secondary)
-                            Spacer()
-                            Text("\(b.score) / 9（\(b.date.formatted(.dateTime.month().day()))）")
-                                .bold().foregroundColor(.purple)
+                Section("Beighton 自评（选填，随本条保存）") {
+                    ForEach(Array(BeightonItems.all.enumerated()), id: \.offset) { i, item in
+                        Toggle(isOn: Binding(
+                            get: { beightonChecks.indices.contains(i) && beightonChecks[i] },
+                            set: { on in
+                                while beightonChecks.count < 9 { beightonChecks.append(false) }
+                                beightonChecks[i] = on
+                            }
+                        )) {
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(item.title).font(.caption)
+                                Text(item.how).font(.caption2).foregroundColor(.secondary)
+                            }
                         }
                     }
-                    NavigationLink {
-                        BeightonView()
-                    } label: {
-                        Label("去做 Beighton 自评", systemImage: "checklist")
+                    HStack {
+                        Text("自评分").font(.subheadline)
+                        Spacer()
+                        Text("\(beightonScore) / 9").bold().foregroundColor(.purple)
                     }
                 }
             }
@@ -132,6 +141,7 @@ struct EntryEditor: View {
                         if let img = photoImage {
                             file = EntryStore.savePhoto(img, for: id)
                         }
+                        let anyChecked = beightonChecks.contains { $0 }
                         let entry = JointEntry(
                             id: id,
                             date: editing?.date ?? Date(),
@@ -142,7 +152,8 @@ struct EntryEditor: View {
                             painDuration: painDuration ?? "minutes",
                             treatment: treatment ?? "none",
                             triggers: Array(triggers),
-                            quick: false   // 补完细节不再是快记
+                            quick: false,   // 补完细节不再是快记
+                            beighton: anyChecked ? beightonScore : nil
                         )
                         onSave(entry)
                     }
@@ -173,5 +184,10 @@ struct EntryEditor: View {
         triggers = Set(e.triggers)
         notes = e.notes
         keepPhotoFile = e.photoFile
+        if let b = e.beighton {
+            var checks = Array(repeating: false, count: 9)
+            for i in 0..<min(b, 9) { checks[i] = true }
+            beightonChecks = checks   // 旧数据只有总分：恢复前 N 项勾选（编辑时可改）
+        }
     }
 }
