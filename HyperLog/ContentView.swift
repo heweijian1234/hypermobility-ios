@@ -62,10 +62,10 @@ struct ContentView: View {
                     Image(systemName: "plus")
                         .font(.title2.bold())
                         .foregroundColor(.white)
-                        .frame(width: 56, height: 56)
+                        .frame(width: 64, height: 64)
                         .background(Circle().fill(Color(red: 0.55, green: 0.45, blue: 0.75)))
                 }
-                .padding(.bottom, 12)
+                .padding(.bottom, 10)
             }
             // 右下：三合一工具（健哥 11-04 令：对比/分享/反馈合一个图标展开）
             .overlay(alignment: .bottomTrailing) {
@@ -74,12 +74,12 @@ struct ContentView: View {
                     Button { goPhotos = true } label: { Label("照片对比", systemImage: "photo.on.rectangle.angled") }
                     Button { goFeedback = true } label: { Label("意见反馈", systemImage: "paperplane") }
                 } label: {
-                    VStack(spacing: 1) {
-                        Image(systemName: "ellipsis").font(.body)
-                        Text("更多").font(.system(size: 9, weight: .semibold))
+                    VStack(spacing: 2) {
+                        Image(systemName: "ellipsis").font(.title3)
+                        Text("更多").font(.caption2.bold())
                     }
                     .foregroundColor(.white)
-                    .frame(width: 48, height: 48)
+                    .frame(width: 64, height: 64)
                     .background(Circle().fill(Color(red: 0.55, green: 0.45, blue: 0.75)))
                 }
                 .padding(.trailing, 16)
