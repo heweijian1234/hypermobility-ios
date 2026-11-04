@@ -8,6 +8,9 @@ struct ContentView: View {
     @State private var grouping = false
     @State private var editingEntry: JointEntry?
     @State private var showEditor = false
+    @State private var goReport = false
+    @State private var goPhotos = false
+    @State private var goFeedback = false
 
     var body: some View {
         NavigationStack {
@@ -64,35 +67,27 @@ struct ContentView: View {
                 }
                 .padding(.bottom, 12)
             }
-            // 右下：报告分享 + 照片对比
+            // 右下：三合一工具（健哥 11-04 令：对比/分享/反馈合一个图标展开）
             .overlay(alignment: .bottomTrailing) {
-                VStack(spacing: 10) {
-                    NavigationLink {
-                        PhotoCompareView()
-                    } label: {
-                        VStack(spacing: 1) {
-                            Image(systemName: "photo.on.rectangle.angled").font(.body)
-                            Text("对比").font(.system(size: 9, weight: .semibold))
-                        }
-                        .foregroundColor(.white)
-                        .frame(width: 48, height: 48)
-                        .background(Circle().fill(Color.purple.opacity(0.75)))
+                Menu {
+                    Button { goReport = true } label: { Label("报告分享", systemImage: "square.and.arrow.up") }
+                    Button { goPhotos = true } label: { Label("照片对比", systemImage: "photo.on.rectangle.angled") }
+                    Button { goFeedback = true } label: { Label("意见反馈", systemImage: "paperplane") }
+                } label: {
+                    VStack(spacing: 1) {
+                        Image(systemName: "ellipsis").font(.body)
+                        Text("更多").font(.system(size: 9, weight: .semibold))
                     }
-                    NavigationLink {
-                        DoctorReportView()
-                    } label: {
-                        VStack(spacing: 1) {
-                            Image(systemName: "square.and.arrow.up").font(.body)
-                            Text("分享").font(.system(size: 9, weight: .semibold))
-                        }
-                        .foregroundColor(.white)
-                        .frame(width: 48, height: 48)
-                        .background(Circle().fill(Color(red: 0.55, green: 0.45, blue: 0.75)))
-                    }
+                    .foregroundColor(.white)
+                    .frame(width: 48, height: 48)
+                    .background(Circle().fill(Color(red: 0.55, green: 0.45, blue: 0.75)))
                 }
                 .padding(.trailing, 16)
                 .padding(.bottom, 16)
             }
+            .navigationDestination(isPresented: $goReport) { DoctorReportView() }
+            .navigationDestination(isPresented: $goPhotos) { PhotoCompareView() }
+            .navigationDestination(isPresented: $goFeedback) { FeedbackView() }
             .sheet(isPresented: $showEditor, onDismiss: {
                 entries = EntryStore.load()
                 editingEntry = nil
