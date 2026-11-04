@@ -28,9 +28,9 @@ targets:
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         # 照片库添加权限（只读选取——粗版从相册导入关节照片）——测试期中文版
-        NSPhotoLibraryUsageDescription: "HyperLog 让你从相册选一张照片附到关节记录上。照片只存在你的手机里。"
-        # 🔴相机权限（拍照用——缺了必崩，健哥 11-04 实测崩溃根因）
-        NSCameraUsageDescription: "HyperLog 让你直接拍照记录关节状况。照片只存在你的手机里。"
+        NSPhotoLibraryUsageDescription: "HyperLog 让你从相册选一 photos照片附到关节记录上。照片只存在你的手机里。"
+        # 🔴相机权限（Camera用——缺了必崩，健哥 11-04 实测崩溃根因）
+        NSCameraUsageDescription: "HyperLog 让你直接Camera记录关节状况。照片只存在你的手机里。"
         ITSAppUsesNonExemptEncryption: false
     settings:
       base:

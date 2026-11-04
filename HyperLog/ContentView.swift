@@ -1,7 +1,7 @@
 import SwiftUI
 import PhotosUI
 
-// MARK: - 主页：左下快记 / 中间＋详细记录 / 右下工具（报告分享+照片对比）
+// MARK: - 主页：左下Quick Log / 中间＋详细记录 / 右下工具（Report Sharing+Photo Compare）
 // 布局（健哥 11-04 拍板）：＋只管详细记录；自评并入详细记录底部；其余功能右下角
 struct ContentView: View {
     @State private var entries: [JointEntry] = EntryStore.load()
@@ -37,14 +37,14 @@ struct ContentView: View {
                     }
                 }
             }
-            // 左下：快记
+            // 左下：Quick Log
             .overlay(alignment: .bottomLeading) {
                 Button {
                     quickLog()
                 } label: {
                     VStack(spacing: 2) {
                         Image(systemName: "bolt.fill").font(.title3.bold())
-                        Text("快记").font(.caption2.bold())
+                        Text("Quick Log").font(.caption2.bold())
                     }
                     .foregroundColor(.white)
                     .frame(width: 64, height: 64)
@@ -70,13 +70,13 @@ struct ContentView: View {
             // 右下：三合一工具（健哥 11-04 令：对比/分享/反馈合一个图标展开）
             .overlay(alignment: .bottomTrailing) {
                 Menu {
-                    Button { goReport = true } label: { Label("报告分享", systemImage: "square.and.arrow.up") }
-                    Button { goPhotos = true } label: { Label("照片对比", systemImage: "photo.on.rectangle.angled") }
-                    Button { goFeedback = true } label: { Label("意见反馈", systemImage: "paperplane") }
+                    Button { goReport = true } label: { Label("Report Sharing", systemImage: "square.and.arrow.up") }
+                    Button { goPhotos = true } label: { Label("Photo Compare", systemImage: "photo.on.rectangle.angled") }
+                    Button { goFeedback = true } label: { Label("Feedback", systemImage: "paperplane") }
                 } label: {
                     VStack(spacing: 2) {
                         Image(systemName: "ellipsis").font(.title3)
-                        Text("更多").font(.caption2.bold())
+                        Text("More").font(.caption2.bold())
                     }
                     .foregroundColor(.white)
                     .frame(width: 64, height: 64)
@@ -107,7 +107,7 @@ struct ContentView: View {
         }
     }
 
-    /// 一键快记：上次部位+当前时间+quick 标记，落库即走
+    /// 一键Quick Log：上次Area+当前时间+quick 标记，落库即走
     private func quickLog() {
         let lastPart = entries.first?.bodyPart ?? "knee"
         let entry = JointEntry(id: UUID(), date: Date(), bodyPart: lastPart,
@@ -133,9 +133,9 @@ struct ContentView: View {
             Image(systemName: "figure.yoga")
                 .font(.system(size: 52))
                 .foregroundColor(.purple)
-            Text("记录你的关节")
+            Text("Track your joints")
                 .font(.headline)
-            Text("发作时点左下角「快记」一键落下，疼过再补细节；平时点中间「＋」详细记录。")
+            Text("Tap Quick Log (bottom left) during a flare — fill in details later. Use ＋ for full entries.")
                 .font(.footnote)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -158,7 +158,7 @@ struct ContentView: View {
                     Button(role: .destructive) {
                         delete(entry)
                     } label: {
-                        Label("删除", systemImage: "trash")
+                        Label("Delete", systemImage: "trash")
                     }
                 }
             }
@@ -180,7 +180,7 @@ struct ContentView: View {
                             Button(role: .destructive) {
                                 delete(e)
                             } label: {
-                                Label("删除", systemImage: "trash")
+                                Label("Delete", systemImage: "trash")
                             }
                         }
                     }
@@ -219,7 +219,7 @@ struct EntryRow: View {
                 HStack {
                     Text(partLabel).font(.subheadline.weight(.semibold))
                     if entry.quick {
-                        Text("待补").font(.caption2.bold())
+                        Text("To fill").font(.caption2.bold())
                             .padding(.horizontal, 5).padding(.vertical, 1)
                             .background(Color.orange.opacity(0.2), in: Capsule())
                             .foregroundColor(.orange)
@@ -233,7 +233,7 @@ struct EntryRow: View {
                 }
                 HStack(spacing: 8) {
                     if !entry.painDurationLabel.isEmpty {
-                        Text("疼\(entry.painDurationLabel)").font(.caption).foregroundColor(.secondary)
+                        Text("pain: \(entry.painDurationLabel)").font(.caption).foregroundColor(.secondary)
                     }
                     if !entry.treatmentLabel.isEmpty {
                         Text(entry.treatmentLabel).font(.caption).foregroundColor(.secondary)

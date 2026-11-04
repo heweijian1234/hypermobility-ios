@@ -9,21 +9,21 @@ struct JointEntry: Codable, Identifiable {
     var bodyPart: String        // knee/shoulder/...（存键，显示走中文名）
     var severity: Int           // 0-3（患者自然语言分档，医学换算留给医生——健哥 11-04 拍板）
     var notes: String
-    var photoFile: String?    // 旧单张字段（读入迁移用）
-    var photoFiles: [String]? // 多张（健哥 11-04 令）
+    var photoFile: String?    // 旧单 photos字段（读入迁移用）
+    var photoFiles: [String]? // 多 photos（健哥 11-04 令）
     // 11-04 增量（健哥拍板 P0/P1/P2 + 疼痛持续时间）
     var painDuration: String?   // 疼痛持续时间（选项）
     var treatment: String?      // self复位/医院复位/未复位
     var triggers: [String]      // 关节版诱因
-    var quick: Bool             // 一键快记（待补细节标记）
-    var beighton: Int?          // 本次记录时的 Beighton 自评分（0-9，随条目存——健哥 11-04 拍板并入）
+    var quick: Bool             // 一键Quick Log（To fill细节标记）
+    var beighton: Int?          // 本次记录时的 Beighton Score（0-9，随条目存——健哥 11-04 拍板并入）
 
     var severityLabel: String {
         switch severity {
         case 0: return "轻微"
         case 1: return "中等"
         case 2: return "明显"
-        default: return "严重（半脱位/脱位）"
+        default: return "Severe (subluxation/dislocation)"
         }
     }
     var treatmentLabel: String {
@@ -43,36 +43,36 @@ struct BeightonRecord: Codable, Identifiable {
 
 enum EntryStore {
     static let bodyParts: [(key: String, label: String)] = [
-        ("knee", "膝盖"), ("shoulder", "肩膀"), ("finger", "手指"),
-        ("hip", "髋部"), ("back", "背部"), ("ankle", "脚踝"),
-        ("wrist", "手腕"), ("neck", "颈部"), ("jaw", "下巴"), ("other", "其他"),
+        ("knee", "Knee"), ("shoulder", "Shoulder"), ("finger", "Fingers"),
+        ("hip", "Hip"), ("back", "Back"), ("ankle", "Ankle"),
+        ("wrist", "Wrist"), ("neck", "Neck"), ("jaw", "Jaw"), ("other", "Other"),
     ]
 
     // 疼痛持续时间（选项式——疼痛中单手能选，不打字）
     static let painDurationOptions: [(key: String, label: String)] = [
-        ("minutes", "几分钟"),
-        ("halfhour", "半小时左右"),
-        ("couplehours", "一两小时"),
-        ("halfday", "半天"),
-        ("allday", "一整天"),
-        ("ongoing", "还在疼"),
+        ("minutes", "A few minutes"),
+        ("halfhour", "~30 minutes"),
+        ("couplehours", "1-2 hours"),
+        ("halfday", "Half a day"),
+        ("allday", "All day"),
+        ("ongoing", "Still hurting"),
     ]
 
     // 处置（医生问诊必问项）
     static let treatmentOptions: [(key: String, label: String)] = [
-        ("self", "自己复位的"),
-        ("hospital", "去医院复位的"),
-        ("none", "没复位自己回去的"),
+        ("self", "Self-repositioned"),
+        ("hospital", "Repositioned at hospital"),
+        ("none", "Went back on its own"),
     ]
 
     // 关节版诱因
     static let triggerOptions: [(key: String, label: String)] = [
-        ("sitting", "久坐 🪑"),
-        ("sports", "运动/拉伸 🏃"),
-        ("lifting", "搬重物 📦"),
-        ("sleepPosture", "睡姿 🛏"),
-        ("weather", "天气变化 🌦"),
-        ("none", "说不清"),
+        ("sitting", "Sitting long 🪑"),
+        ("sports", "Exercise/stretch 🏃"),
+        ("lifting", "Lifting heavy 📦"),
+        ("sleepPosture", "Sleep posture 🛏"),
+        ("weather", "Weather change 🌦"),
+        ("none", "Not sure"),
     ]
 
     static var directory: URL {
@@ -99,7 +99,7 @@ enum EntryStore {
         let url = directory.appendingPathComponent("entries.json")
         guard let data = try? Data(contentsOf: url),
               var list = try? JSONDecoder().decode([JointEntry].self, from: data) else { return [] }
-        // 旧单张迁移并入多张
+        // 旧单 photos迁移并入多 photos
         var migrated = false
         for i in list.indices {
             if let single = list[i].photoFile {
@@ -123,7 +123,7 @@ enum EntryStore {
         photoDir.appendingPathComponent(file)
     }
 
-    /// 按部位分组（自动整理）
+    /// By area分组（自动整理）
     static func grouped(_ entries: [JointEntry]) -> [(part: String, label: String, count: Int, items: [JointEntry])] {
         let labels = Dictionary(uniqueKeysWithValues: bodyParts.map { ($0.key, $0.label) })
         let dict = Dictionary(grouping: entries, by: { $0.bodyPart })

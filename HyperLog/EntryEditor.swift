@@ -1,9 +1,9 @@
 import SwiftUI
 import PhotosUI
 
-// MARK: - 条目编辑：新建/补细节/编辑（部位/程度/疼痛持续/处置/诱因/备注/多张照片/Beighton）
+// MARK: - 条目编辑：新建/补细节/编辑（Area/程度/疼痛持续/处置/诱因/Notes/多 photos照片/Beighton）
 struct EntryEditor: View {
-    /// nil=新建；有值=编辑这条（一键快记的"补细节"就是编辑模式）
+    /// nil=新建；有值=编辑这条（一键Quick Log的"补细节"就是编辑模式）
     var editing: JointEntry?
     var onSave: (JointEntry?) -> Void
 
@@ -24,8 +24,8 @@ struct EntryEditor: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("哪个关节/部位？") {
-                    Picker("部位", selection: $bodyPart) {
+                Section("Which joint / area?") {
+                    Picker("Area", selection: $bodyPart) {
                         ForEach(EntryStore.bodyParts, id: \.key) { part in
                             Text(part.label).tag(part.key)
                         }
@@ -33,17 +33,17 @@ struct EntryEditor: View {
                     .pickerStyle(.inline)
                     .labelsHidden()
                 }
-                Section("程度如何？") {
-                    Picker("程度", selection: $severity) {
-                        Text("轻微").tag(0)
-                        Text("中等").tag(1)
-                        Text("明显").tag(2)
-                        Text("严重（半脱位/脱位）").tag(3)
+                Section("How significant?") {
+                    Picker("Severity", selection: $severity) {
+                        Text("Mild").tag(0)
+                        Text("Moderate").tag(1)
+                        Text("Significant").tag(2)
+                        Text("Severe (subluxation/dislocation)").tag(3)
                     }
                     .pickerStyle(.segmented)
                 }
-                Section("疼了多久？") {
-                    Picker("疼痛持续时间", selection: Binding(
+                Section("How long did it hurt?") {
+                    Picker("Pain duration", selection: Binding(
                         get: { painDuration ?? "minutes" },
                         set: { painDuration = $0 }
                     )) {
@@ -53,8 +53,8 @@ struct EntryEditor: View {
                     }
                     .pickerStyle(.menu)
                 }
-                Section("怎么处理的？") {
-                    Picker("处置", selection: Binding(
+                Section("What did you do about it?") {
+                    Picker("Treatment", selection: Binding(
                         get: { treatment ?? "none" },
                         set: { treatment = $0 }
                     )) {
@@ -65,7 +65,7 @@ struct EntryEditor: View {
                     .pickerStyle(.inline)
                     .labelsHidden()
                 }
-                Section("发作前在干什么？（诱因）") {
+                Section("What were you doing before? (triggers)") {
                     ForEach(EntryStore.triggerOptions, id: \.key) { opt in
                         Toggle(opt.label, isOn: Binding(
                             get: { triggers.contains(opt.key) },
@@ -77,25 +77,25 @@ struct EntryEditor: View {
                         ))
                     }
                 }
-                Section("备注") {
-                    TextField("什么情况、什么感觉、当时在干什么……", text: $notes, axis: .vertical)
+                Section("Notes") {
+                    TextField("What happened, how it feels, what you were doing…", text: $notes, axis: .vertical)
                         .lineLimit(6...12)
                 }
-                Section("照片（可多张）") {
+                Section("Photos (multiple)") {
                     HStack(spacing: 24) {
                         Button {
                             showCamera = true
                         } label: {
-                            Label("拍照", systemImage: "camera.fill")
+                            Label("Camera", systemImage: "camera.fill")
                         }
                         PhotosPicker(selection: $pickerItems, maxSelectionCount: 9, matching: .images) {
-                            Label("相册（可多选）", systemImage: "photo.on.rectangle")
+                            Label("Library (multi)", systemImage: "photo.on.rectangle")
                         }
                     }
                     .buttonStyle(.borderless)
                     photoGrid
                 }
-                Section("Beighton 自评（选填，随本条保存）") {
+                Section("Beighton self-check (optional, saved with this entry)") {
                     ForEach(Array(BeightonItems.all.enumerated()), id: \.offset) { i, item in
                         Toggle(isOn: Binding(
                             get: { beightonChecks.indices.contains(i) && beightonChecks[i] },
@@ -111,20 +111,20 @@ struct EntryEditor: View {
                         }
                     }
                     HStack {
-                        Text("自评分").font(.subheadline)
+                        Text("Score").font(.subheadline)
                         Spacer()
                         Text("\(beightonScore) / 9").bold().foregroundColor(.purple)
                     }
                 }
             }
-            .navigationTitle(editing == nil ? "新记录" : "补充/编辑")
+            .navigationTitle(editing == nil ? "New entry" : "Edit / complete")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") { onSave(nil) }
+                    Button("Cancel") { onSave(nil) }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") { save() }
+                    Button("Save") { save() }
                 }
             }
             .onAppear(perform: loadExisting)

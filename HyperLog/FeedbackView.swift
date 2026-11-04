@@ -9,15 +9,15 @@ struct FeedbackView: View {
 
     var body: some View {
         Form {
-            Section("说说你的想法") {
-                TextField("哪里好用、哪里别扭、想要什么功能……直接写，开发者本人看。", text: $text, axis: .vertical)
+            Section("Tell us what you think") {
+                TextField("What works, what doesn't, what you wish existed — the developer reads every message.", text: $text, axis: .vertical)
                     .lineLimit(6...14)
             }
             Section {
                 Button {
                     showMail = true
                 } label: {
-                    Label("发送给开发者", systemImage: "paperplane.fill")
+                    Label("Send to developer", systemImage: "paperplane.fill")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
@@ -26,7 +26,7 @@ struct FeedbackView: View {
                 .disabled(!mailAvailable)
                 if !mailAvailable {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("本机没有配置邮件账户——请把意见发到：")
+                        Text("No mail account on this device — send feedback to:")
                             .font(.caption).foregroundColor(.secondary)
                         Text("48449892@qq.com")
                             .font(.body.bold())
@@ -35,7 +35,7 @@ struct FeedbackView: View {
                 }
             }
         }
-        .navigationTitle("意见反馈")
+        .navigationTitle("Feedback")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showMail) {
             MailComposer(body: text)

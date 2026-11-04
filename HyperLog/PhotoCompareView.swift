@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - 同部位照片并排对比（P2-8：肿胀变化肉眼可见——照片已在存，缺对比视图）
+// MARK: - 同Area照片并排对比（P2-8：肿胀变化肉眼可见——照片已在存，缺对比视图）
 struct PhotoCompareView: View {
     @State private var entries: [JointEntry] = EntryStore.load()
     @State private var part = "knee"
@@ -17,18 +17,18 @@ struct PhotoCompareView: View {
     var body: some View {
         List {
             if partsWithPhotos.isEmpty {
-                Text("还没有带照片的记录——记条目时附上照片，这里就能按部位并排对比变化。")
+                Text("No entries with photos yet — attach photos to entries to compare changes side by side here.")
                     .foregroundColor(.secondary)
             } else {
-                Section("部位") {
-                    Picker("部位", selection: $part) {
+                Section("Area") {
+                    Picker("Area", selection: $part) {
                         ForEach(partsWithPhotos, id: \.self) { key in
                             Text(EntryStore.bodyParts.first(where: { $0.key == key })?.label ?? key).tag(key)
                         }
                     }
                     .pickerStyle(.segmented)
                 }
-                Section("时间序（旧→新，往下翻）") {
+                Section("Chronological (oldest first)") {
                     ForEach(photoEntries.reversed()) { e in
                         let files = e.photoFiles ?? []
                         if !files.isEmpty {
@@ -52,7 +52,7 @@ struct PhotoCompareView: View {
                                         .font(.caption2)
                                         .foregroundColor(.orange)
                                     if files.count > 1 {
-                                        Text("\(files.count) 张").font(.caption2).foregroundColor(.secondary)
+                                        Text("\(files.count) photos").font(.caption2).foregroundColor(.secondary)
                                     }
                                     Spacer()
                                 }
@@ -63,7 +63,7 @@ struct PhotoCompareView: View {
                 }
             }
         }
-        .navigationTitle("照片对比")
+        .navigationTitle("Photo Compare")
         .navigationBarTitleDisplayMode(.inline)
     }
 }

@@ -1,14 +1,14 @@
 import SwiftUI
 import MessageUI
 
-// MARK: - 报告分享（健哥 11-04 令：医生报告→报告分享；只留 PDF+内容说明）
+// MARK: - Report Sharing（健哥 11-04 令：医生报告→Report Sharing；只留 PDF+内容说明）
 struct PDFAttachment: Identifiable {
     let id = UUID()
     let data: Data?
 }
 
 struct DoctorReportView: View {
-    @State private var range = 1   // 0=7天 1=30天 2=全部
+    @State private var range = 1   // 0=7天 1=30天 2=All
     @State private var entries: [JointEntry] = EntryStore.load()
     @State private var pdfData: PDFAttachment?
 
@@ -22,28 +22,28 @@ struct DoctorReportView: View {
 
     var body: some View {
         List {
-            Picker("范围", selection: $range) {
-                Text("最近 7 天").tag(0)
-                Text("最近 30 天").tag(1)
-                Text("全部").tag(2)
+            Picker("Range", selection: $range) {
+                Text("Last 7 days").tag(0)
+                Text("Last 30 days").tag(1)
+                Text("All").tag(2)
             }
             .pickerStyle(.segmented)
 
-            Section("预览（PDF 里就是这些）") {
-                statRow("发作总次数", "\(ranged.count) 次")
-                statRow("涉及部位", "\(EntryStore.grouped(ranged).count) 个")
+            Section("Preview (this is what the PDF contains)") {
+                statRow("Total episodes", "\(ranged.count)")
+                statRow("Areas involved", "\(EntryStore.grouped(ranged).count)")
                 if let top = EntryStore.grouped(ranged).first {
-                    statRow("最频繁部位", "\(top.label)（\(top.count) 次）")
+                    statRow("Most frequent area", "\(top.label) — \(top.count)")
                 }
                 let severe = ranged.filter { $0.severity >= 3 }.count
-                statRow("严重发作（半脱位/脱位）", "\(severe) 次")
+                statRow("Severe episodes (subluxation/dislocation)", "\(severe)")
                 let hospital = ranged.filter { $0.treatment == "hospital" }.count
-                statRow("去医院复位", "\(hospital) 次")
+                statRow("Hospital repositioning", "\(hospital)")
                 ForEach(EntryStore.grouped(ranged), id: \.part) { g in
                     HStack {
-                        Text("【\(g.label)】").foregroundColor(.secondary)
+                        Text(g.label).foregroundColor(.secondary)
                         Spacer()
-                        Text("\(g.count) 次").foregroundColor(.purple)
+                        Text("\(g.count)").foregroundColor(.purple)
                     }
                 }
             }
@@ -61,7 +61,7 @@ struct DoctorReportView: View {
                             .first?.present(av, animated: true)
                     }
                 } label: {
-                    Label("邮件发送给医生", systemImage: "envelope.fill")
+                    Label("Email to doctor", systemImage: "envelope.fill")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
@@ -74,20 +74,20 @@ struct DoctorReportView: View {
                             .first?.present(av, animated: true)
                     }
                 } label: {
-                    Label("其他方式分享（Gmail/Outlook/信息/存储）", systemImage: "square.and.arrow.up")
+                    Label("Share other ways (Gmail/Outlook/Messages/Files)", systemImage: "square.and.arrow.up")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
-                Text("PDF 包含：发作统计（总次数/各部位/严重/就医）＋ 图表（部位条形图/每日趋势）＋ 最近 Beighton 分 ＋ 逐条明细（时间/部位/程度/疼多久/怎么处理/诱因/照片/备注）")
+                Text("PDF includes: summary stats, per-joint bar chart, daily trend, latest Beighton score, and the full episode list (time / area / severity / pain duration / treatment / triggers / photos / notes).")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
         }
-        .navigationTitle("报告分享")
+        .navigationTitle("Report Sharing")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $pdfData) { attachment in
             if let data = attachment.data {
-                PDFMailComposer(attachment: data, filename: "HyperLog报告.pdf")
+                PDFMailComposer(attachment: data, filename: "HyperLog-Report.pdf")
             }
         }
     }
@@ -101,34 +101,34 @@ struct DoctorReportView: View {
     }
 
     private var textReport: String {
-        var lines = ["HyperLog 关节发作报告"]
-        lines.append("范围：\(range == 0 ? "最近7天" : range == 1 ? "最近30天" : "全部") · 共 \(ranged.count) 次发作")
-        lines.append("严重发作（半脱位/脱位）：\(ranged.filter { $0.severity >= 3 }.count) 次")
-        lines.append("去医院复位：\(ranged.filter { $0.treatment == "hospital" }.count) 次")
+        var lines = ["HyperLog Joint Episode Report"]
+        lines.append("Range: \(range == 0 ? "last 7 days" : range == 1 ? "last 30 days" : "All") ·  \(ranged.count)  episodes")
+        lines.append("Severe episodes (subluxation/dislocation)：\(ranged.filter { $0.severity >= 3 }.count)")
+        lines.append("Hospital repositioning：\(ranged.filter { $0.treatment == "hospital" }.count)")
         lines.append("")
         for g in EntryStore.grouped(ranged) {
-            lines.append("【\(g.label)】\(g.count) 次")
+            lines.append("\(g.label): \(g.count)")
             for e in g.items.prefix(50) {
                 var parts = [e.date.formatted(.dateTime.month().day().hour().minute())]
                 parts.append(e.severityLabel)
-                if !e.painDurationLabel.isEmpty { parts.append("疼\(e.painDurationLabel)") }
+                if !e.painDurationLabel.isEmpty { parts.append("pain: \(e.painDurationLabel)") }
                 if !e.treatmentLabel.isEmpty { parts.append(e.treatmentLabel) }
                 lines.append("  · " + parts.joined(separator: " · "))
             }
         }
         if let b = entries.compactMap(\.beighton).last {
             lines.append("")
-            lines.append("最近 Beighton 自评：\(b)/9")
+            lines.append("Latest Beighton: \(b)/9")
         }
-        lines.append("（HyperLog 患者自录——供医生参考，非诊断）")
+        lines.append("(Self-recorded with HyperLog — for reference, not a diagnosis.)")
         return lines.joined(separator: "\n")
     }
 
-    /// PDF：概览+图表（部位横条图/按日趋势竖条图）+逐条明细+Beighton——健哥 11-04 令：不能只有文字
+    /// PDF：概览+图表（Area横条图/按日趋势竖条图）+Episode details+Beighton——健哥 11-04 令：不能只有文字
     private func makePDF() -> URL? {
         let pageRect = CGRect(x: 0, y: 0, width: 595, height: 842) // A4
         let renderer = UIGraphicsPDFRenderer(bounds: pageRect)
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("HyperLog报告.pdf")
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("HyperLog-Report.pdf")
         let purple = UIColor(red: 0.45, green: 0.3, blue: 0.7, alpha: 1)
         let groups = EntryStore.grouped(ranged)
 
@@ -140,12 +140,12 @@ struct DoctorReportView: View {
             let cg = ctx.cgContext
 
             // 标题
-            ("HyperLog 关节发作报告" as NSString).draw(
+            ("HyperLog Joint Episode Report" as NSString).draw(
                 at: CGPoint(x: 40, y: 36),
                 withAttributes: [.font: UIFont.boldSystemFont(ofSize: 18), .foregroundColor: purple])
-            let sub = "范围：\(range == 0 ? "最近7天" : range == 1 ? "最近30天" : "全部") · 共 \(ranged.count) 次发作 · 严重 \(ranged.filter { $0.severity >= 3 }.count) 次 · 就医复位 \(ranged.filter { $0.treatment == "hospital" }.count) 次"
+            let sub = "Range: \(range == 0 ? "last 7 days" : range == 1 ? "last 30 days" : "All") ·  \(ranged.count)  episodes · Severe \(ranged.filter { $0.severity >= 3 }.count) · Hospital: \(ranged.filter { $0.treatment == "hospital" }.count)"
             if let b = ranged.compactMap(\.beighton).last {
-                ("最近 Beighton 自评：\(b)/9" as NSString).draw(
+                ("Latest Beighton: \(b)/9" as NSString).draw(
                     at: CGPoint(x: 40, y: 76),
                     withAttributes: [.font: UIFont.boldSystemFont(ofSize: 12), .foregroundColor: purple])
             }
@@ -155,8 +155,8 @@ struct DoctorReportView: View {
 
             var y: CGFloat = 92
 
-            // 图1：各部位发作次数（横向条形）
-            ("各部位发作次数" as NSString).draw(
+            // 图1：Episodes per area（横向条形）
+            ("Episodes per area" as NSString).draw(
                 at: CGPoint(x: 40, y: y),
                 withAttributes: [.font: UIFont.boldSystemFont(ofSize: 12), .foregroundColor: UIColor.black])
             y += 18
@@ -175,7 +175,7 @@ struct DoctorReportView: View {
 
             y += 12
             // 图2：按日发作趋势（竖向条形）
-            ("每日发作趋势" as NSString).draw(
+            ("Daily trend" as NSString).draw(
                 at: CGPoint(x: 40, y: y),
                 withAttributes: [.font: UIFont.boldSystemFont(ofSize: 12), .foregroundColor: UIColor.black])
             y += 14
@@ -202,8 +202,8 @@ struct DoctorReportView: View {
             }
             y += chartH + 18
 
-            // 逐条明细（含照片小图，自动翻页）
-            ("逐条明细" as NSString).draw(
+            // Episode details（含照片小图，自动翻页）
+            ("Episode details" as NSString).draw(
                 at: CGPoint(x: 40, y: y),
                 withAttributes: [.font: UIFont.boldSystemFont(ofSize: 12), .foregroundColor: UIColor.black])
             y += 16
@@ -224,13 +224,13 @@ struct DoctorReportView: View {
                 y += 13
                 if !e.triggers.isEmpty {
                     let tr = e.triggers.compactMap { k in EntryStore.triggerOptions.first(where: { $0.key == k })?.label }.joined(separator: "、")
-                    ("诱因：\(tr)" as NSString).draw(
+                    ("Triggers: \(tr)" as NSString).draw(
                         at: CGPoint(x: 52, y: y),
                         withAttributes: [.font: UIFont.systemFont(ofSize: 8), .foregroundColor: UIColor.darkGray])
                     y += 12
                 }
                 if !e.notes.isEmpty {
-                    ("备注：\(e.notes)" as NSString).draw(
+                    ("Notes：\(e.notes)" as NSString).draw(
                         in: CGRect(x: 52, y: y, width: 480, height: 24),
                         withAttributes: [.font: UIFont.systemFont(ofSize: 8), .foregroundColor: UIColor.darkGray])
                     y += 14
