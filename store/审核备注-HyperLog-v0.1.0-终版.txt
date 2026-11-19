@@ -1,0 +1,22 @@
+HyperLog (Hypermobility Log) 0.1.0 — information requested under Guideline 2.1
+
+1) DEMO VIDEO (physical iPhone, latest public iOS; the recording begins with tapping the app icon and shows the full typical flow):
+https://postwriter.cn/seo/review/hyperlog-demo-0.1.0.mp4
+Flow: launch → main list (entries grouped by joint) → detailed entry (joint, pain significance, duration, management, trigger, Beighton 9-point self-assessment) → attach photo → list with photo thumbnails and per-joint badges → Report sharing (7/30 days/all) with on-screen PDF preview (totals, areas involved, most frequent area, severe episodes, hospital repositioning) → report exported as PDF and opened (summary statistics, per-joint chart, daily trend, entries with photos, Beighton score). The one-tap Quick Log flare-time entry is also shown.
+
+2) PURPOSE AND AUDIENCE
+For people with joint hypermobility (hypermobility spectrum disorder / Ehlers-Danlos syndrome) and their clinicians. Episodes are frequent, hard to describe and hard to recall accurately weeks later; swelling photos lose their clinical context in the camera roll. Value: log an episode in seconds during a flare, keep photos attached to the entry, see patterns grouped by joint, and hand a physiotherapist or rheumatologist one structured PDF instead of a verbal reconstruction; the Beighton score is captured with the entries.
+
+3) SETUP AND ACCESS
+No account, no sign-in, no configuration; the only permission is the photo library, requested only when attaching a photo. Install → open → log. No demo credentials and no sample files are needed: there is no authentication of any kind and all content is created by the user on device.
+
+4) EXTERNAL SERVICES USED FOR CORE FUNCTIONALITY
+None. Fully offline and self-contained: no server, no third-party data provider, no authentication service, no payment processor, no AI service, no analytics/crash/ad/social SDK. On-device storage (app sandbox); PDF, charts and photos via Apple frameworks (SwiftUI, UIKit, PDFKit, PhotosUI). Export uses the standard iOS share sheet or the user's own mail client; the app itself transmits nothing.
+
+5) REGIONAL DIFFERENCES
+None. Identical features and content in every territory. Localizations (en, de, fr, es, ja) translate the same feature set; nothing is enabled or disabled per region.
+
+6) REGULATED INDUSTRY / PROTECTED MATERIAL
+Not applicable. Personal record-keeping utility, not a medical device and not a medical service: it does not diagnose or treat, gives no medical advice and makes no clinical claims — stated in the App Store description and in-app ("NOT A MEDICAL DEVICE — HyperLog records what you experience... consult a healthcare professional"). No protected third-party material; all icons, screenshots and text are original.
+
+Related requirements: no account creation → no account deletion flow applies; no user-generated content shared with others → reporting/blocking mechanisms do not apply; no in-app purchases or paid content (3.1.1 n/a); consumer utility, not for a specific business or its employees (3.2 n/a); all screenshots show the app in use (2.3.3).

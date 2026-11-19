@@ -250,7 +250,7 @@ struct EntryRow: View {
     }
 
     private var partLabel: String {
-        EntryStore.bodyParts.first(where: { $0.key == entry.bodyPart })?.label ?? entry.bodyPart
+        EntryStore.displayPart(entry.bodyPart)
     }
 
     private var severityColor: Color {

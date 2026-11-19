@@ -215,8 +215,8 @@ struct DoctorReportView: View {
                     ctx.beginPage()
                     y = 40
                 }
-                var line = "\(e.date.formatted(.dateTime.month().day().hour().minute())) · \(EntryStore.bodyParts.first(where: { $0.key == e.bodyPart })?.label ?? e.bodyPart) · \(e.severityLabel)"
-                if !e.painDurationLabel.isEmpty { line += " · 疼\(e.painDurationLabel)" }
+                var line = "\(e.date.formatted(.dateTime.month().day().hour().minute())) · \(EntryStore.displayPart(e.bodyPart)) · \(e.severityLabel)"
+                if !e.painDurationLabel.isEmpty { line += " · pain: \(e.painDurationLabel)" }
                 if !e.treatmentLabel.isEmpty { line += " · \(e.treatmentLabel)" }
                 (line as NSString).draw(
                     at: CGPoint(x: 40, y: y),

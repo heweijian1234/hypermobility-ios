@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """HyperLog ASC 上架填料：创建 0.1.0 版本 + 5 语本地化 + 3 张截图上传"""
 import time, json, base64, sys, hashlib, urllib.request
 
@@ -74,13 +74,13 @@ LOCALES = {
     "ja": {"subtitle": "関節の過伸展を記録",
            "keywords": "関節,過伸展,エーラス・ダンロス,亜脱臼,記録",
            "description": "関節がよく曲がる人（過伸展・HSD・EDS）のためのシンプルな記録アプリ。どの関節が、どれくらい、いつ、何をしていたときに起きたかを数秒で記録。写真を添付、経過を並べて比較。Beightonセルフ評価（9点法）内蔵。関節ごとに自動グループ化。理学療法士や医師のためのPDFレポート出力。アカウント不要・クラウドなし・広告なし。あなたのデータは端末から出ません。医療機器ではありません。"},
-    "de": {"subtitle": "Gelenk-Hypermobilität Log",
+    "de-DE": {"subtitle": "Gelenk-Hypermobilität Log",
            "keywords": "Hypermobilität,Gelenk,Subluxation,EDS,Tagebuch",
            "description": "Ein einfaches Tagebuch für hypermobile Gelenke. Protokolliere in Sekunden: welches Gelenk, wie stark, wie lange die Schmerzen dauerten, was du dagegen getan hast und was du vorher gemacht hast. Fotos anhängen und Veränderungen im Vergleich sehen. Beighton-Selbsteinschätzung (9-Punkte) integriert. Einträge werden automatisch pro Gelenk gruppiert. PDF-Bericht für Physiotherapeut:in oder Rheumatolog:in exportieren. Kein Konto, keine Cloud, keine Werbung — deine Daten verlassen dein Gerät nie. Kein Medizinprodukt."},
-    "fr": {"subtitle": "Journal articulations hypermobiles",
+    "fr-FR": {"subtitle": "Journal articulations hypermobiles",
            "keywords": "hyperlaxité,articulation,subluxation,EDS,journal",
            "description": "Un journal simple pour les articulations hypermobiles. Notez en quelques secondes : quelle articulation, quelle intensité, combien de temps la douleur a duré, ce que vous avez fait, et ce que vous faisiez avant. Ajoutez des photos et comparez l'évolution. Auto-évaluation de Beighton (9 points) intégrée. Regroupement automatique par articulation. Exportez un rapport PDF pour votre kiné ou rhumatologue. Sans compte, sans cloud, sans pub — vos données ne quittent jamais votre téléphone. Pas un dispositif médical."},
-    "es": {"subtitle": "Diario de articulaciones",
+    "es-ES": {"subtitle": "Diario de articulaciones",
            "keywords": "hipermovilidad,articulaciones,subluxación,EDS,diario",
            "description": "Un diario simple para articulaciones hipermóviles. Registra en segundos: qué articulación, cuánta intensidad, cuánto duró el dolor, qué hiciste y qué estabas haciendo antes. Añade fotos y compara la evolución. Autoevaluación de Beighton (9 puntos) incluida. Agrupación automática por articulación. Exporta un informe PDF para tu fisioterapeuta o reumatólogo. Sin cuenta, sin nube, sin anuncios — tus datos nunca salen de tu teléfono. No es un dispositivo médico."},
 }
@@ -146,13 +146,29 @@ for locale, info in LOCALES.items():
         detail = errs[0].get("detail", "") if errs else ""
         print(f"[2/4] 版本文案 {locale}: {st} {detail} | raw={json.dumps(rr)[:400]}")
 
-# 3. 截图上传（en-US 的 IPHONE_67 set）
-st, r = asc(f"https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations?filter[appStoreVersion]={ver_id}&filter[locale]=en-US")
-en_loc = r["data"][0]["id"]
-st, r = asc(f"https://api.appstoreconnect.apple.com/v1/appScreenshotSets?filter[appStoreVersionLocalization]={en_loc}&filter[screenshotDisplayType]=APP_IPHONE_67")
-if not r.get("data"):
-    print("[3/4] 无 IPHONE_67 set（需网页先建或 displayType 不符）", json.dumps(r)[:200]); sys.exit(1)
-set_id = r["data"][0]["id"]
+# 3. 截图上传（en-US 的 IPHONE_67 set）——本地化列表直查（relationship 方式）
+st, r = asc(f"https://api.appstoreconnect.apple.com/v1/appStoreVersions/{ver_id}/appStoreVersionLocalizations")
+en_loc = None
+for l in r.get("data", []):
+    if l["attributes"]["locale"] == "en-US":
+        en_loc = l["id"]
+        break
+if not en_loc:
+    print("[3/4] 未找到 en-US 版本本地化"); sys.exit(1)
+st, r = asc(f"https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/{en_loc}/appScreenshotSets")
+set_id = None
+for s in r.get("data", []):
+    if s["attributes"].get("screenshotDisplayType") == "APP_IPHONE_67":
+        set_id = s["id"]; break
+else:
+    st, r = asc("https://api.appstoreconnect.apple.com/v1/appScreenshotSets", {"data": {
+        "type": "appScreenshotSets",
+        "attributes": {"screenshotDisplayType": "APP_IPHONE_67"},
+        "relationships": {"appStoreVersionLocalization": {"data": {"type": "appStoreVersionLocalizations", "id": en_loc}}}}})
+    if st in (200, 201) and r.get("data"):
+        set_id = r["data"][0]["id"]
+    else:
+        print("[3/4] 截图集获取/创建失败", st, json.dumps(r)[:300]); sys.exit(1)
 print(f"[3/4] 截图集 id={set_id}")
 
 import os
@@ -186,3 +202,4 @@ for i in range(1, 4):
     time.sleep(2)
 
 print("[4/4] 完成——年龄分级/隐私问答/审核信息=网页（健哥提审前 3 分钟）")
+

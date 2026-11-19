@@ -1,7 +1,7 @@
 import SwiftUI
 import MessageUI
 
-// MARK: - 用户反馈页（健哥 11-04 令）——邮件直达 48449892@qq.com（用户主动发信，不破坏"无联网"承诺）
+// MARK: - 用户反馈页 v2（健哥 11-19 令：同 GroomerBook 改法——道歉文案+邮箱统一 zerone348+无邮件账户回退）
 struct FeedbackView: View {
     @State private var text = ""
     @State private var showMail = false
@@ -15,7 +15,16 @@ struct FeedbackView: View {
             }
             Section {
                 Button {
-                    showMail = true
+                    if mailAvailable {
+                        showMail = true
+                    } else {
+                        // 未配系统邮件账户：mailto 直跳回退（正文 URL 转义仅此兜底路径）
+                        let subject = "HyperLog Feedback".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+                        let body = text.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+                        if let url = URL(string: "mailto:zerone348@gmail.com?subject=\(subject)&body=\(body)") {
+                            UIApplication.shared.open(url)
+                        }
+                    }
                 } label: {
                     Label("Send to developer", systemImage: "paperplane.fill")
                         .frame(maxWidth: .infinity)
@@ -23,16 +32,18 @@ struct FeedbackView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(.purple)
                 .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .disabled(!mailAvailable)
                 if !mailAvailable {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("No mail account on this device — send feedback to:")
                             .font(.caption).foregroundColor(.secondary)
-                        Text("48449892@qq.com")
+                        Text("zerone348@gmail.com")
                             .font(.body.bold())
                             .textSelection(.enabled)
                     }
                 }
+            } footer: {
+                // 健哥 11-19 令：道歉+欢迎新功能想法（同 GroomerBook ⑦）
+                Text("Sorry for any trouble! Please tell the developer what's not working — it will be fixed as soon as possible. New feature ideas are also very welcome, so the app can serve you better.")
             }
         }
         .navigationTitle("Feedback")
@@ -47,8 +58,8 @@ struct MailComposer: UIViewControllerRepresentable {
     let body: String
     func makeUIViewController(context: Context) -> MFMailComposeViewController {
         let m = MFMailComposeViewController()
-        m.setToRecipients(["48449892@qq.com"])
-        m.setSubject("HyperLog 用户反馈")
+        m.setToRecipients(["zerone348@gmail.com"])
+        m.setSubject("HyperLog Feedback")
         m.setMessageBody(body, isHTML: false)
         m.mailComposeDelegate = context.coordinator
         return m

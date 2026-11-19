@@ -8,6 +8,7 @@ struct EntryEditor: View {
     var onSave: (JointEntry?) -> Void
 
     @State private var bodyPart: String = "knee"
+    @State private var customPart: String = ""   // 健哥 11-19 令：other 选中后没有填写框——补自定义部位名
     @State private var severity = 1
     @State private var painDuration: String?
     @State private var treatment: String?
@@ -32,6 +33,10 @@ struct EntryEditor: View {
                     }
                     .pickerStyle(.inline)
                     .labelsHidden()
+                    // 健哥 11-19 令②：选 Other 后没有填写框——补自定义部位输入
+                    if bodyPart == "other" {
+                        TextField("Type the area (e.g. rib, toe, TMJ…)", text: $customPart)
+                    }
                 }
                 Section("How significant?") {
                     Picker("Severity", selection: $severity) {
@@ -203,10 +208,14 @@ struct EntryEditor: View {
             }
         }
         let anyChecked = beightonChecks.contains { $0 }
+        // other 带自定义名：存 "other:rib"（显示层解析冒号后部分）
+        let partToSave = (bodyPart == "other" && !customPart.trimmingCharacters(in: .whitespaces).isEmpty)
+            ? "other:" + customPart.trimmingCharacters(in: .whitespaces)
+            : bodyPart
         let entry = JointEntry(
             id: id,
             date: editing?.date ?? Date(),
-            bodyPart: bodyPart,
+            bodyPart: partToSave,
             severity: severity,
             notes: notes,
             photoFile: nil,
@@ -222,7 +231,13 @@ struct EntryEditor: View {
 
     private func loadExisting() {
         guard let e = editing else { return }
-        bodyPart = e.bodyPart
+        // other:xxx 拆回 base + 自定义名
+        if e.bodyPart.hasPrefix("other:") {
+            bodyPart = "other"
+            customPart = String(e.bodyPart.dropFirst("other:".count))
+        } else {
+            bodyPart = e.bodyPart
+        }
         severity = e.severity
         painDuration = e.painDuration
         treatment = e.treatment

@@ -20,9 +20,9 @@ struct JointEntry: Codable, Identifiable {
 
     var severityLabel: String {
         switch severity {
-        case 0: return "轻微"
-        case 1: return "中等"
-        case 2: return "明显"
+        case 0: return "Mild"
+        case 1: return "Moderate"
+        case 2: return "Significant"
         default: return "Severe (subluxation/dislocation)"
         }
     }
@@ -82,6 +82,15 @@ enum EntryStore {
         return dir
     }
 
+    /// 显示名统一解析（健哥 11-19 令②：other:xxx → "xxx"；普通键 → 英文标签）
+    static func displayPart(_ key: String) -> String {
+        if key.hasPrefix("other:") {
+            let custom = String(key.dropFirst("other:".count))
+            return custom.isEmpty ? "Other" : custom
+        }
+        return bodyParts.first(where: { $0.key == key })?.label ?? key
+    }
+
     static var photoDir: URL {
         let dir = directory.appendingPathComponent("photos", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -123,12 +132,11 @@ enum EntryStore {
         photoDir.appendingPathComponent(file)
     }
 
-    /// By area分组（自动整理）
+    /// By area分组（自动整理）——other:xxx 各自定义名独立成组（健哥 11-19 令②）
     static func grouped(_ entries: [JointEntry]) -> [(part: String, label: String, count: Int, items: [JointEntry])] {
-        let labels = Dictionary(uniqueKeysWithValues: bodyParts.map { ($0.key, $0.label) })
         let dict = Dictionary(grouping: entries, by: { $0.bodyPart })
         return dict
-            .map { (part: $0.key, label: labels[$0.key] ?? $0.key, count: $0.value.count, items: $0.value.sorted { $0.date > $1.date }) }
+            .map { (part: $0.key, label: displayPart($0.key), count: $0.value.count, items: $0.value.sorted { $0.date > $1.date }) }
             .sorted { $0.count > $1.count }
     }
 

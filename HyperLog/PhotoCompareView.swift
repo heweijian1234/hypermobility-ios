@@ -23,7 +23,7 @@ struct PhotoCompareView: View {
                 Section("Area") {
                     Picker("Area", selection: $part) {
                         ForEach(partsWithPhotos, id: \.self) { key in
-                            Text(EntryStore.bodyParts.first(where: { $0.key == key })?.label ?? key).tag(key)
+                            Text(EntryStore.displayPart(key)).tag(key)
                         }
                     }
                     .pickerStyle(.segmented)
