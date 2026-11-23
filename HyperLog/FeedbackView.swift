@@ -5,6 +5,7 @@ import MessageUI
 struct FeedbackView: View {
     @State private var text = ""
     @State private var showMail = false
+    @State private var noMail = false   // 11-23修：无邮件账户提示页
     @State private var mailAvailable = MFMailComposeViewController.canSendMail()
 
     var body: some View {
@@ -12,18 +13,25 @@ struct FeedbackView: View {
             Section("Tell us what you think") {
                 TextField("What works, what doesn't, what you wish existed — the developer reads every message.", text: $text, axis: .vertical)
                     .lineLimit(6...14)
+                    .toolbar {
+                        ToolbarItemGroup(placement: .keyboard) {
+                            Spacer()
+                            Button {
+                                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                            } label: {
+                                Label("Done", systemImage: "keyboard.chevron.compact.down")
+                            }
+                        }
+                    }
             }
             Section {
                 Button {
                     if mailAvailable {
                         showMail = true
                     } else {
-                        // 未配系统邮件账户：mailto 直跳回退（正文 URL 转义仅此兜底路径）
-                        let subject = "HyperLog Feedback".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-                        let body = text.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
-                        if let url = URL(string: "mailto:zerone348@gmail.com?subject=\(subject)&body=\(body)") {
-                            UIApplication.shared.open(url)
-                        }
+                        // 11-23修：无系统邮件账户不再mailto跳白屏（U同款）——弹提示页+复制正文
+                        UIPasteboard.general.string = text
+                        noMail = true
                     }
                 } label: {
                     Label("Send to developer", systemImage: "paperplane.fill")
@@ -50,6 +58,31 @@ struct FeedbackView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showMail) {
             MailComposer(body: text)
+        }
+        .sheet(isPresented: $noMail) {
+            NavigationStack {
+                Form {
+                    Section {
+                        Text("No system Mail account on this phone, so the draft can't open here.")
+                            .font(.subheadline)
+                        Text("Your feedback has been copied. Send it from any mail app (Gmail / Outlook) to:")
+                            .font(.footnote).foregroundColor(.secondary)
+                        Text("zerone348@gmail.com")
+                            .font(.body.bold())
+                            .textSelection(.enabled)
+                    } footer: {
+                        Text("Long-press the address above to copy it.")
+                    }
+                }
+                .navigationTitle("Email the Developer")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { noMail = false }
+                    }
+                }
+            }
+            .presentationDetents([.medium])
         }
     }
 }

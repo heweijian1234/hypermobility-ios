@@ -97,6 +97,14 @@ enum EntryStore {
         return dir
     }
 
+    /// 11-23修：删除entry时清理其照片文件（防photos目录磁盘泄漏）
+    static func deletePhotoFiles(_ entry: JointEntry) {
+        let files = entry.photoFiles ?? (entry.photoFile.map { [$0] } ?? [])
+        for f in files {
+            try? FileManager.default.removeItem(at: photoDir.appendingPathComponent(f))
+        }
+    }
+
     static func save(_ entries: [JointEntry]) {
         let url = directory.appendingPathComponent("entries.json")
         if let data = try? JSONEncoder().encode(entries) {

@@ -124,6 +124,7 @@ struct ContentView: View {
             try? FileManager.default.removeItem(at: EntryStore.photoURL(file))
         }
         entries.removeAll { $0.id == entry.id }
+        EntryStore.deletePhotoFiles(entry)   // 11-23修：孤儿照片清理（磁盘泄漏）
         EntryStore.save(entries)
     }
 

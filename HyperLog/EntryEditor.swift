@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 import PhotosUI
 
 // MARK: - 条目编辑：新建/补细节/编辑（Area/程度/疼痛持续/处置/诱因/Notes/多 photos照片/Beighton）
@@ -201,6 +202,13 @@ struct EntryEditor: View {
 
     private func save() {
         let id = editing?.id ?? UUID()
+        // 11-23修：编辑时被移除的旧照片文件清理（防泄漏）
+        if let old = editing {
+            let oldFiles = old.photoFiles ?? []
+            for f in oldFiles where !keepFiles.contains(f) {
+                try? FileManager.default.removeItem(at: EntryStore.photoDir.appendingPathComponent(f))
+            }
+        }
         var files = keepFiles
         for (i, img) in newImages.enumerated() {
             if let name = EntryStore.savePhoto(img, for: id, index: files.count + i) {
