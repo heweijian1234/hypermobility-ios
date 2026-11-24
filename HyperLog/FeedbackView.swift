@@ -38,7 +38,7 @@ struct FeedbackView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.purple)
+                .tint(Theme.accent)
                 .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 if !mailAvailable {
                     VStack(alignment: .leading, spacing: 6) {

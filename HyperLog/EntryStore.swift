@@ -65,13 +65,13 @@ enum EntryStore {
         ("none", "Went back on its own"),
     ]
 
-    // 关节版诱因
+    // 关节版诱因（11-25：去掉 emoji，跟 SF Symbols 图标体系冲突，纯文字更稳）
     static let triggerOptions: [(key: String, label: String)] = [
-        ("sitting", "Sitting long 🪑"),
-        ("sports", "Exercise/stretch 🏃"),
-        ("lifting", "Lifting heavy 📦"),
-        ("sleepPosture", "Sleep posture 🛏"),
-        ("weather", "Weather change 🌦"),
+        ("sitting", "Sitting long"),
+        ("sports", "Exercise / stretch"),
+        ("lifting", "Lifting heavy"),
+        ("sleepPosture", "Sleep posture"),
+        ("weather", "Weather change"),
         ("none", "Not sure"),
     ]
 

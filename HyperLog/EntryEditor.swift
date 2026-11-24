@@ -2,135 +2,62 @@ import SwiftUI
 import Foundation
 import PhotosUI
 
-// MARK: - 条目编辑：新建/补细节/编辑（Area/程度/疼痛持续/处置/诱因/Notes/多 photos照片/Beighton）
+// MARK: - 条目编辑
+// 旧版：8 个 Section + 部位 10 行 inline picker + 4 段 segmented 里塞 31 字符长文案
+// （在 iPhone 上必然截断成 "Severe (s…"），一次记录要滚 4-5 屏。
+// 现在：部位 chips + 严重度四段常驻首屏，其余细节折叠成「带当前值」的入口，点击展开子页。
+
 struct EntryEditor: View {
-    /// nil=新建；有值=编辑这条（一键Quick Log的"补细节"就是编辑模式）
+
+    /// nil = 新建；有值 = 编辑/补细节
     var editing: JointEntry?
     var onSave: (JointEntry?) -> Void
 
     @State private var bodyPart: String = "knee"
-    @State private var customPart: String = ""   // 健哥 11-19 令：other 选中后没有填写框——补自定义部位名
-    @State private var severity = 1
-    @State private var painDuration: String?
-    @State private var treatment: String?
+    @State private var customPart: String = ""
+    @State private var severity: Int = 1
+    @State private var painDuration: String? = "minutes"
+    @State private var treatment: String? = "none"
     @State private var triggers: Set<String> = []
-    @State private var notes = ""
+    @State private var notes: String = ""
     @State private var pickerItems: [PhotosPickerItem] = []
-    @State private var newImages: [UIImage] = []      // 本次新选/新拍的
-    @State private var keepFiles: [String] = []       // 保留的已有文件
+    @State private var newImages: [UIImage] = []
+    @State private var keepFiles: [String] = []
     @State private var showCamera = false
     @State private var beightonChecks: [Bool] = []
+
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 5)
 
     private var beightonScore: Int { beightonChecks.filter { $0 }.count }
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Which joint / area?") {
-                    Picker("Area", selection: $bodyPart) {
-                        ForEach(EntryStore.bodyParts, id: \.key) { part in
-                            Text(part.label).tag(part.key)
-                        }
-                    }
-                    .pickerStyle(.inline)
-                    .labelsHidden()
-                    // 健哥 11-19 令②：选 Other 后没有填写框——补自定义部位输入
-                    if bodyPart == "other" {
-                        TextField("Type the area (e.g. rib, toe, TMJ…)", text: $customPart)
-                    }
+            ScrollView {
+                VStack(spacing: 10) {
+                    areaCard
+                    severityCard
+                    detailsCard
+                    photoCard
+                    beightonCard
                 }
-                Section("How significant?") {
-                    Picker("Severity", selection: $severity) {
-                        Text("Mild").tag(0)
-                        Text("Moderate").tag(1)
-                        Text("Significant").tag(2)
-                        Text("Severe (subluxation/dislocation)").tag(3)
-                    }
-                    .pickerStyle(.segmented)
-                }
-                Section("How long did it hurt?") {
-                    Picker("Pain duration", selection: Binding(
-                        get: { painDuration ?? "minutes" },
-                        set: { painDuration = $0 }
-                    )) {
-                        ForEach(EntryStore.painDurationOptions, id: \.key) { opt in
-                            Text(opt.label).tag(opt.key)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                }
-                Section("What did you do about it?") {
-                    Picker("Treatment", selection: Binding(
-                        get: { treatment ?? "none" },
-                        set: { treatment = $0 }
-                    )) {
-                        ForEach(EntryStore.treatmentOptions, id: \.key) { opt in
-                            Text(opt.label).tag(opt.key)
-                        }
-                    }
-                    .pickerStyle(.inline)
-                    .labelsHidden()
-                }
-                Section("What were you doing before? (triggers)") {
-                    ForEach(EntryStore.triggerOptions, id: \.key) { opt in
-                        Toggle(opt.label, isOn: Binding(
-                            get: { triggers.contains(opt.key) },
-                            set: { on in
-                                if on { triggers.insert(opt.key) } else { triggers.remove(opt.key) }
-                                if opt.key != "none" { triggers.remove("none") }
-                                if opt.key == "none" { triggers.removeAll(); triggers.insert("none") }
-                            }
-                        ))
-                    }
-                }
-                Section("Notes") {
-                    TextField("What happened, how it feels, what you were doing…", text: $notes, axis: .vertical)
-                        .lineLimit(6...12)
-                }
-                Section("Photos (multiple)") {
-                    HStack(spacing: 24) {
-                        Button {
-                            showCamera = true
-                        } label: {
-                            Label("Camera", systemImage: "camera.fill")
-                        }
-                        PhotosPicker(selection: $pickerItems, maxSelectionCount: 9, matching: .images) {
-                            Label("Library (multi)", systemImage: "photo.on.rectangle")
-                        }
-                    }
-                    .buttonStyle(.borderless)
-                    photoGrid
-                }
-                Section("Beighton self-check (optional, saved with this entry)") {
-                    ForEach(Array(BeightonItems.all.enumerated()), id: \.offset) { i, item in
-                        Toggle(isOn: Binding(
-                            get: { beightonChecks.indices.contains(i) && beightonChecks[i] },
-                            set: { on in
-                                while beightonChecks.count < 9 { beightonChecks.append(false) }
-                                beightonChecks[i] = on
-                            }
-                        )) {
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text(item.title).font(.caption)
-                                Text(item.how).font(.caption2).foregroundColor(.secondary)
-                            }
-                        }
-                    }
-                    HStack {
-                        Text("Score").font(.subheadline)
-                        Spacer()
-                        Text("\(beightonScore) / 9").bold().foregroundColor(.purple)
-                    }
-                }
+                .padding(.horizontal, 18)
+                .padding(.top, 14)
+                .padding(.bottom, 34)
             }
-            .navigationTitle(editing == nil ? "New entry" : "Edit / complete")
+            .background(Theme.paper)
+            .navigationTitle(editing == nil ? "New entry" : "Edit entry")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Theme.paper, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { onSave(nil) }
+                        .foregroundColor(Theme.ink2)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(Theme.accent)
                 }
             }
             .onAppear(perform: loadExisting)
@@ -157,34 +84,238 @@ struct EntryEditor: View {
         }
     }
 
-    /// 已有照片（文件）+ 新选（内存）混排；右上小×删除
+    // MARK: 部位
+
+    private var areaCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            cardLabel("AREA")
+            LazyVGrid(columns: columns, spacing: 6) {
+                ForEach(EntryStore.bodyParts, id: \.key) { item in
+                    areaChip(item.key, item.label)
+                }
+            }
+            if bodyPart == "other" {
+                TextField("Type the area (e.g. rib, toe, TMJ…)", text: $customPart)
+                    .font(Theme.ui(12))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(Theme.paper, in: RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8).stroke(Theme.hair, lineWidth: 1)
+                    )
+                    .padding(.top, 2)
+            }
+        }
+        .card()
+    }
+
+    private func areaChip(_ key: String, _ text: String) -> some View {
+        let selected = bodyPart == key
+        return Button {
+            bodyPart = key
+        } label: {
+            Text(text)
+                .font(Theme.ui(10.5, selected ? .semibold : .medium))
+                .foregroundColor(selected ? .white : Theme.ink2)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+                .frame(maxWidth: .infinity)
+                .frame(height: 36)
+                .background(
+                    RoundedRectangle(cornerRadius: 8).fill(selected ? Theme.accent : Theme.surface)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(selected ? Theme.accent : Theme.hair, lineWidth: 1.2)
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: 严重度
+
+    private var severityCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            cardLabel("HOW MUCH")
+            HStack(spacing: 0) {
+                ForEach(0..<4, id: \.self) { level in
+                    Button {
+                        severity = level
+                    } label: {
+                        Text(Theme.severityLabel(level))
+                            .font(Theme.ui(11, .semibold))
+                            .foregroundColor(severity == level ? .white : Theme.ink2)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.72)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
+                            .background(severity == level ? Theme.severityColor(level) : Color.clear)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .background(Theme.surface)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.hair, lineWidth: 1.2))
+
+            Text("Severe = it slipped out or dislocated.")
+                .font(Theme.ui(10))
+                .foregroundColor(Theme.ink3)
+        }
+        .card()
+    }
+
+    // MARK: 细节
+
+    private var detailsCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            cardLabel("DETAILS")
+            durationRow
+            divider
+            treatmentRow
+            divider
+            triggersRow
+            divider
+            notesRow
+        }
+        .card()
+    }
+
+    private var durationRow: some View {
+        Menu {
+            ForEach(EntryStore.painDurationOptions, id: \.key) { opt in
+                Button(opt.label) { painDuration = opt.key }
+            }
+        } label: {
+            valueRow("Pain duration", durationLabel)
+        }
+    }
+
+    private var treatmentRow: some View {
+        Menu {
+            ForEach(EntryStore.treatmentOptions, id: \.key) { opt in
+                Button(opt.label) { treatment = opt.key }
+            }
+        } label: {
+            valueRow("Treatment", treatmentLabel)
+        }
+    }
+
+    private var triggersRow: some View {
+        NavigationLink {
+            TriggerPickerView(selection: $triggers)
+        } label: {
+            valueRow("Triggers", triggersLabel)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var notesRow: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Notes")
+                .font(Theme.ui(12.5))
+                .foregroundColor(Theme.ink)
+            TextField("What happened, how it feels, what you were doing…", text: $notes, axis: .vertical)
+                .font(Theme.ui(12))
+                .lineLimit(2...6)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 9)
+                .background(Theme.paper, in: RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.hair, lineWidth: 1))
+        }
+        .padding(.vertical, 11)
+    }
+
+    private func valueRow(_ title: String, _ value: String) -> some View {
+        HStack(spacing: 6) {
+            Text(title)
+                .font(Theme.ui(12.5))
+                .foregroundColor(Theme.ink)
+            Spacer(minLength: 8)
+            Text(value)
+                .font(Theme.ui(11.5, .medium))
+                .foregroundColor(Theme.ink2)
+                .lineLimit(1)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(Theme.ink3)
+        }
+        .padding(.vertical, 12)
+        .contentShape(Rectangle())
+    }
+
+    private var divider: some View {
+        Rectangle()
+            .fill(Theme.hair)
+            .frame(height: 1)
+    }
+
+    // MARK: 照片
+
+    private var photoCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            cardLabel("PHOTOS")
+            HStack(spacing: 8) {
+                Button {
+                    showCamera = true
+                } label: {
+                    pillLabel("Camera", "camera.fill")
+                }
+                .buttonStyle(.plain)
+                PhotosPicker(selection: $pickerItems, maxSelectionCount: 9, matching: .images) {
+                    pillLabel("Library", "photo.on.rectangle")
+                }
+                .buttonStyle(.plain)
+            }
+            photoGrid
+        }
+        .card()
+    }
+
+    private func pillLabel(_ text: String, _ icon: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 11, weight: .semibold))
+            Text(text)
+                .font(Theme.ui(12, .semibold))
+        }
+        .foregroundColor(Theme.accent)
+        .padding(.horizontal, 12)
+        .frame(height: 34)
+        .background(Capsule().fill(Theme.paper))
+        .overlay(Capsule().stroke(Theme.hair, lineWidth: 1.2))
+    }
+
     @ViewBuilder
     private var photoGrid: some View {
         let total = keepFiles.count + newImages.count
         if total > 0 {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(Array(keepFiles.enumerated()), id: \.offset) { i, file in
+                    ForEach(Array(keepFiles.enumerated()), id: \.offset) { index, file in
                         ZStack(alignment: .topTrailing) {
                             if let img = UIImage(contentsOfFile: EntryStore.photoURL(file).path) {
                                 Image(uiImage: img)
-                                    .resizable().scaledToFill()
+                                    .resizable()
+                                    .scaledToFill()
                                     .frame(width: 72, height: 72)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                    .clipShape(RoundedRectangle(cornerRadius: 9))
                             }
-                            removeButton { keepFiles.remove(at: i) }
+                            removeButton { keepFiles.remove(at: index) }
                         }
                     }
-                    ForEach(Array(newImages.enumerated()), id: \.offset) { i, img in
+                    ForEach(Array(newImages.enumerated()), id: \.offset) { index, img in
                         ZStack(alignment: .topTrailing) {
                             Image(uiImage: img)
-                                .resizable().scaledToFill()
+                                .resizable()
+                                .scaledToFill()
                                 .frame(width: 72, height: 72)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                            removeButton { newImages.remove(at: i) }
+                                .clipShape(RoundedRectangle(cornerRadius: 9))
+                            removeButton { newImages.remove(at: index) }
                         }
                     }
                 }
+                .padding(.vertical, 2)
             }
             .frame(height: 84)
         }
@@ -193,33 +324,99 @@ struct EntryEditor: View {
     private func removeButton(_ action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: "xmark.circle.fill")
-                .font(.caption)
+                .font(.system(size: 13))
                 .foregroundColor(.white)
                 .background(Circle().fill(Color.black.opacity(0.55)))
         }
+        .buttonStyle(.plain)
         .padding(3)
     }
 
+    // MARK: Beighton
+
+    private var beightonCard: some View {
+        NavigationLink {
+            BeightonEditorView(checks: $beightonChecks)
+        } label: {
+            HStack(spacing: 6) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Beighton self-check")
+                        .font(Theme.ui(12.5))
+                        .foregroundColor(Theme.ink)
+                    Text("Optional · saved with this entry")
+                        .font(Theme.ui(10))
+                        .foregroundColor(Theme.ink3)
+                }
+                Spacer(minLength: 8)
+                Text("\(beightonScore) / 9")
+                    .font(Theme.serif(15))
+                    .foregroundColor(Theme.accent)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(Theme.ink3)
+            }
+            .padding(14)
+            .contentShape(Rectangle())
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.hair, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: 小件
+
+    private func cardLabel(_ text: String) -> some View {
+        Text(text)
+            .font(Theme.mono(9))
+            .foregroundColor(Theme.ink3)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.bottom, 2)
+    }
+
+    // MARK: 标签
+
+    private var durationLabel: String {
+        EntryStore.painDurationOptions.first(where: { $0.key == painDuration })?.label ?? "—"
+    }
+    private var treatmentLabel: String {
+        EntryStore.treatmentOptions.first(where: { $0.key == treatment })?.label ?? "—"
+    }
+    private var triggersLabel: String {
+        if triggers.isEmpty { return "None" }
+        if triggers.contains("none") { return "Not sure" }
+        let order = EntryStore.triggerOptions.map { $0.key }
+        let labels = order.compactMap { key -> String? in
+            guard triggers.contains(key) else { return nil }
+            return EntryStore.triggerOptions.first(where: { $0.key == key })?.label
+        }
+        return labels.isEmpty ? "None" : labels.joined(separator: ", ")
+    }
+
+    // MARK: 存取
+
     private func save() {
         let id = editing?.id ?? UUID()
-        // 11-23修：编辑时被移除的旧照片文件清理（防泄漏）
+
+        // 编辑时被移除的旧照片文件清理（防磁盘泄漏）
         if let old = editing {
             let oldFiles = old.photoFiles ?? []
-            for f in oldFiles where !keepFiles.contains(f) {
-                try? FileManager.default.removeItem(at: EntryStore.photoDir.appendingPathComponent(f))
+            for file in oldFiles where !keepFiles.contains(file) {
+                try? FileManager.default.removeItem(at: EntryStore.photoDir.appendingPathComponent(file))
             }
         }
+
         var files = keepFiles
-        for (i, img) in newImages.enumerated() {
-            if let name = EntryStore.savePhoto(img, for: id, index: files.count + i) {
+        for (index, img) in newImages.enumerated() {
+            if let name = EntryStore.savePhoto(img, for: id, index: keepFiles.count + index) {
                 files.append(name)
             }
         }
+
         let anyChecked = beightonChecks.contains { $0 }
-        // other 带自定义名：存 "other:rib"（显示层解析冒号后部分）
         let partToSave = (bodyPart == "other" && !customPart.trimmingCharacters(in: .whitespaces).isEmpty)
             ? "other:" + customPart.trimmingCharacters(in: .whitespaces)
             : bodyPart
+
         let entry = JointEntry(
             id: id,
             date: editing?.date ?? Date(),
@@ -239,7 +436,6 @@ struct EntryEditor: View {
 
     private func loadExisting() {
         guard let e = editing else { return }
-        // other:xxx 拆回 base + 自定义名
         if e.bodyPart.hasPrefix("other:") {
             bodyPart = "other"
             customPart = String(e.bodyPart.dropFirst("other:".count))
@@ -247,15 +443,114 @@ struct EntryEditor: View {
             bodyPart = e.bodyPart
         }
         severity = e.severity
-        painDuration = e.painDuration
-        treatment = e.treatment
+        painDuration = e.painDuration ?? "minutes"
+        treatment = e.treatment ?? "none"
         triggers = Set(e.triggers)
         notes = e.notes
         keepFiles = e.photoFiles ?? []
-        if let b = e.beighton {
+        if let score = e.beighton {
             var checks = Array(repeating: false, count: 9)
-            for i in 0..<min(b, 9) { checks[i] = true }
+            for i in 0..<min(score, 9) { checks[i] = true }
             beightonChecks = checks
         }
+    }
+}
+
+// MARK: - 诱因多选
+
+struct TriggerPickerView: View {
+    @Binding var selection: Set<String>
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(EntryStore.triggerOptions, id: \.key) { opt in
+                    Toggle(isOn: binding(opt.key)) {
+                        Text(opt.label)
+                            .font(Theme.ui(14))
+                    }
+                    .tint(Theme.accent)
+                }
+            } footer: {
+                Text("“Not sure” clears the others.")
+                    .font(Theme.ui(11))
+            }
+        }
+        .navigationTitle("Triggers")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func binding(_ key: String) -> Binding<Bool> {
+        Binding(
+            get: { selection.contains(key) },
+            set: { on in
+                if on {
+                    if key == "none" {
+                        selection = ["none"]
+                    } else {
+                        selection.remove("none")
+                        selection.insert(key)
+                    }
+                } else {
+                    selection.remove(key)
+                }
+            }
+        )
+    }
+}
+
+// MARK: - Beighton 九项
+
+struct BeightonEditorView: View {
+    @Binding var checks: [Bool]
+
+    private var score: Int { checks.filter { $0 }.count }
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(Array(BeightonItems.all.enumerated()), id: \.offset) { index, item in
+                    Toggle(isOn: binding(index)) {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(item.title)
+                                .font(Theme.ui(13.5))
+                            Text(item.how)
+                                .font(Theme.ui(10.5))
+                                .foregroundColor(Theme.ink3)
+                        }
+                    }
+                    .tint(Theme.accent)
+                }
+            } footer: {
+                Text("Used by clinicians as a 9-point screen for generalised joint hypermobility. This is a self-check, not a diagnosis.")
+                    .font(Theme.ui(11))
+            }
+        }
+        .navigationTitle("Beighton · \(score)/9")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func binding(_ index: Int) -> Binding<Bool> {
+        Binding(
+            get: { checks.indices.contains(index) && checks[index] },
+            set: { on in
+                while checks.count < 9 { checks.append(false) }
+                if checks.indices.contains(index) { checks[index] = on }
+            }
+        )
+    }
+}
+
+// MARK: - 卡片样式
+
+private extension View {
+    func card() -> some View {
+        self
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12).stroke(Theme.hair, lineWidth: 1)
+            )
     }
 }

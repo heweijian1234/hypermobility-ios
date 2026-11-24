@@ -27,18 +27,19 @@ targets:
           UIColorName: ""
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
-        # 照片库添加权限（只读选取——粗版从相册导入关节照片）——测试期中文版
-        NSPhotoLibraryUsageDescription: "HyperLog 让你从相册选一 photos照片附到关节记录上。照片只存在你的手机里。"
-        # 🔴相机权限（Camera用——缺了必崩，健哥 11-04 实测崩溃根因）
-        NSCameraUsageDescription: "HyperLog 让你直接Camera记录关节状况。照片只存在你的手机里。"
+        # 照片库权限（选图附加到关节记录）
+        NSPhotoLibraryUsageDescription: "HyperLog lets you attach photos to a joint entry. Photos stay on your phone."
+        # 🔴相机权限（缺了必崩，健哥 11-04 实测崩溃根因）
+        NSCameraUsageDescription: "HyperLog lets you photograph a joint directly. Photos stay on your phone."
         ITSAppUsesNonExemptEncryption: false
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.zeronelabs.hyperlog
         TARGETED_DEVICE_FAMILY: "1"
-        INFOPLIST_KEY_UIUserInterfaceStyle: Automatic
+        # 11-25 UI 改版：纸感浅色设计，深色模式暂未适配 → 先锁 Light（不半吊子上线深色）
+        INFOPLIST_KEY_UIUserInterfaceStyle: Light
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        MARKETING_VERSION: "0.3.0"
+        MARKETING_VERSION: "0.4.0"
         CURRENT_PROJECT_VERSION: "1"
 
 schemes:

@@ -1,7 +1,11 @@
 import SwiftUI
 import MessageUI
 
-// MARK: - Report Sharing（健哥 11-04 令：医生报告→Report Sharing；只留 PDF+内容说明）
+// MARK: - 报告（给医生看的证据）
+// 旧版是一屏「五行统计 + 两个同义按钮 + 三行说明」，像后台管理界面。
+// 现在：大号数字先行、部位条形图直接画在页面上、30 日热度条、一个主按钮。
+// PDF 生成逻辑保持原样，只把硬编码紫色换成 Theme.accentUI。
+
 struct PDFAttachment: Identifiable {
     let id = UUID()
     let data: Data?
@@ -20,71 +24,38 @@ struct DoctorReportView: View {
         }
     }
 
-    var body: some View {
-        List {
-            Picker("Range", selection: $range) {
-                Text("Last 7 days").tag(0)
-                Text("Last 30 days").tag(1)
-                Text("All").tag(2)
-            }
-            .pickerStyle(.segmented)
+    private var groups: [(part: String, label: String, count: Int, items: [JointEntry])] {
+        EntryStore.grouped(ranged)
+    }
 
-            Section("Preview (this is what the PDF contains)") {
-                statRow("Total episodes", "\(ranged.count)")
-                statRow("Areas involved", "\(EntryStore.grouped(ranged).count)")
-                if let top = EntryStore.grouped(ranged).first {
-                    statRow("Most frequent area", "\(top.label) — \(top.count)")
-                }
-                let severe = ranged.filter { $0.severity >= 3 }.count
-                statRow("Severe episodes (subluxation/dislocation)", "\(severe)")
-                let hospital = ranged.filter { $0.treatment == "hospital" }.count
-                statRow("Hospital repositioning", "\(hospital)")
-                ForEach(EntryStore.grouped(ranged), id: \.part) { g in
-                    HStack {
-                        Text(g.label).foregroundColor(.secondary)
-                        Spacer()
-                        Text("\(g.count)").foregroundColor(.purple)
-                    }
-                }
-            }
-
-            Section {
-                Button {
-                    guard let url = makePDF() else { return }
-                    if MFMailComposeViewController.canSendMail() {
-                        pdfData = PDFAttachment(data: try? Data(contentsOf: url))
-                    } else {
-                        // 未配系统邮件账户（国内常见）——直接走分享面板（QQ邮箱/Gmail/Outlook 全在里面）
-                        let av = UIActivityViewController(activityItems: [url], applicationActivities: nil)
-                        UIApplication.shared.connectedScenes
-                            .compactMap { ($0 as? UIWindowScene)?.keyWindow?.rootViewController }
-                            .first?.present(av, animated: true)
-                    }
-                } label: {
-                    Label("Email to doctor", systemImage: "envelope.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.purple)
-                Button {
-                    if let url = makePDF() {
-                        let av = UIActivityViewController(activityItems: [url], applicationActivities: nil)
-                        UIApplication.shared.connectedScenes
-                            .compactMap { ($0 as? UIWindowScene)?.keyWindow?.rootViewController }
-                            .first?.present(av, animated: true)
-                    }
-                } label: {
-                    Label("Share other ways (Gmail/Outlook/Messages/Files)", systemImage: "square.and.arrow.up")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                Text("PDF includes: summary stats, per-joint bar chart, daily trend, latest Beighton score, and the full episode list (time / area / severity / pain duration / treatment / triggers / photos / notes).")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
+    private var severeCount: Int { ranged.filter { $0.severity >= 3 }.count }
+    private var hospitalCount: Int { ranged.filter { $0.treatment == "hospital" }.count }
+    private var maxAreaCount: Int { max(groups.first?.count ?? 1, 1) }
+    private var rangeLabel: String {
+        switch range {
+        case 0: return "The last 7 days"
+        case 2: return "All time"
+        default: return "The last 30 days"
         }
-        .navigationTitle("Report Sharing")
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                headerBlock
+                rangeChips
+                statCard
+                areaBars
+                dayStrip
+                actions
+            }
+            .padding(.bottom, 34)
+        }
+        .background(Theme.paper)
+        .navigationTitle("Report")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(Theme.paper, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .sheet(item: $pdfData) { attachment in
             if let data = attachment.data {
                 PDFMailComposer(attachment: data, filename: "HyperLog-Report.pdf")
@@ -92,13 +63,252 @@ struct DoctorReportView: View {
         }
     }
 
-    private func statRow(_ k: String, _ v: String) -> some View {
-        HStack {
-            Text(k).foregroundColor(.secondary)
+    // MARK: 头
+
+    private var headerBlock: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text("FOR YOUR DOCTOR")
+                .font(Theme.mono(9.5))
+                .foregroundColor(Theme.ink3)
+            Text(rangeLabel)
+                .font(Theme.serif(28))
+                .foregroundColor(Theme.ink)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 18)
+        .padding(.top, 8)
+        .padding(.bottom, 14)
+    }
+
+    private var rangeChips: some View {
+        HStack(spacing: 6) {
+            rangeChip("7 days", 0)
+            rangeChip("30 days", 1)
+            rangeChip("All", 2)
             Spacer()
-            Text(v).bold()
+        }
+        .padding(.horizontal, 18)
+        .padding(.bottom, 14)
+    }
+
+    private func rangeChip(_ text: String, _ tag: Int) -> some View {
+        let selected = range == tag
+        return Button {
+            range = tag
+        } label: {
+            Text(text)
+                .font(Theme.ui(11.5, selected ? .semibold : .medium))
+                .foregroundColor(selected ? .white : Theme.ink2)
+                .padding(.horizontal, 13)
+                .frame(height: 32)
+                .background(Capsule().fill(selected ? Theme.accent : Theme.surface))
+                .overlay(Capsule().stroke(selected ? Theme.accent : Theme.hair, lineWidth: 1.2))
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: 主数字
+
+    private var statCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("EPISODES RECORDED")
+                .font(Theme.mono(9))
+                .foregroundColor(Theme.ink3)
+
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text("\(ranged.count)")
+                    .font(Theme.serif(46))
+                    .foregroundColor(Theme.ink)
+                Text("episodes")
+                    .font(Theme.ui(12))
+                    .foregroundColor(Theme.ink2)
+                Spacer(minLength: 4)
+                Text(comparisonText)
+                    .font(Theme.mono(10, .bold))
+                    .foregroundColor(Theme.ink3)
+            }
+            .padding(.top, 2)
+
+            Rectangle()
+                .fill(Theme.hair)
+                .frame(height: 1)
+                .padding(.top, 10)
+
+            HStack(spacing: 12) {
+                metaStat("\(severeCount)", "severe")
+                metaStat("\(hospitalCount)", "hospital reset")
+                metaStat("\(groups.count)", "areas")
+                Spacer(minLength: 0)
+            }
+            .padding(.top, 10)
+        }
+        .padding(16)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.cardRadius))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.cardRadius).stroke(Theme.hair, lineWidth: 1)
+        )
+        .padding(.horizontal, 18)
+    }
+
+    private func metaStat(_ value: String, _ label: String) -> some View {
+        HStack(spacing: 4) {
+            Text(value)
+                .font(Theme.ui(11.5, .bold))
+                .foregroundColor(Theme.ink)
+            Text(label)
+                .font(Theme.ui(10.5))
+                .foregroundColor(Theme.ink2)
         }
     }
+
+    private var comparisonText: String {
+        // 与前一个等长周期对比；All 不做对比
+        guard range != 2 else { return "" }
+        let days = range == 0 ? 7 : 30
+        let now = Date()
+        let start = now.addingTimeInterval(-Double(days) * 86400)
+        let prevStart = start.addingTimeInterval(-Double(days) * 86400)
+        let prev = entries.filter { $0.date >= prevStart && $0.date < start }.count
+        let delta = ranged.count - prev
+        if delta == 0 { return "even vs prev." }
+        return (delta > 0 ? "+" : "") + "\(delta) vs prev."
+    }
+
+    // MARK: 部位条形
+
+    private var areaBars: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(groups.prefix(5).enumerated()), id: \.offset) { _, group in
+                areaRow(group.label, group.count)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 6)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.cardRadius))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.cardRadius).stroke(Theme.hair, lineWidth: 1)
+        )
+        .padding(.horizontal, 18)
+        .padding(.top, 12)
+    }
+
+    private func areaRow(_ label: String, _ count: Int) -> some View {
+        HStack(spacing: 9) {
+            Text(label)
+                .font(Theme.ui(11.5, .medium))
+                .foregroundColor(Theme.ink)
+                .frame(width: 62, alignment: .leading)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Theme.paper)
+                    Capsule()
+                        .fill(Theme.accent)
+                        .frame(width: max(geo.size.width * CGFloat(count) / CGFloat(maxAreaCount), 6))
+                }
+            }
+            .frame(height: 7)
+            Text("\(count)")
+                .font(Theme.mono(10.5))
+                .foregroundColor(Theme.ink2)
+                .frame(width: 24, alignment: .trailing)
+        }
+        .padding(.vertical, 8)
+    }
+
+    // MARK: 30 日热度条
+
+    private var dayStrip: some View {
+        let days = dailyCounts()
+        let peak = max(days.map { $0.1 }.max() ?? 1, 1)
+        return VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .bottom, spacing: 2.5) {
+                ForEach(Array(days.enumerated()), id: \.offset) { _, item in
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(item.1 == 0 ? Theme.hair : Theme.severityColor(item.1 >= peak ? 3 : (item.1 >= 2 ? 2 : 1)))
+                        .frame(height: item.1 == 0 ? 5 : 8 + CGFloat(item.1) / CGFloat(peak) * 22)
+                }
+            }
+            .frame(height: 30, alignment: .bottom)
+
+            HStack {
+                Text(firstDayLabel(days))
+                Spacer()
+                Text("TODAY")
+            }
+            .font(Theme.mono(8.5))
+            .foregroundColor(Theme.ink3)
+            .padding(.top, 6)
+        }
+        .padding(.horizontal, 18)
+        .padding(.top, 14)
+    }
+
+    private func firstDayLabel(_ days: [(String, Int)]) -> String {
+        guard let first = days.first else { return "" }
+        return first.0.uppercased()
+    }
+
+    // MARK: 行动
+
+    private var actions: some View {
+        VStack(spacing: 10) {
+            Button {
+                sendToDoctor()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "doc.text")
+                        .font(.system(size: 14, weight: .semibold))
+                    Text("Send to doctor")
+                        .font(Theme.ui(14.5, .semibold))
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .background(RoundedRectangle(cornerRadius: 13).fill(Theme.accent))
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                if let url = makePDF() { share(url) }
+            } label: {
+                Text("Share PDF another way")
+                    .font(Theme.ui(12, .semibold))
+                    .foregroundColor(Theme.accent)
+            }
+            .buttonStyle(.plain)
+
+            Text("Summary, per-area chart, daily trend, latest Beighton score and the full episode list — photos included.")
+                .font(Theme.ui(10))
+                .foregroundColor(Theme.ink3)
+                .multilineTextAlignment(.center)
+                .lineSpacing(2)
+                .padding(.horizontal, 10)
+                .padding(.top, 2)
+        }
+        .padding(.horizontal, 18)
+        .padding(.top, 18)
+    }
+
+    private func sendToDoctor() {
+        guard let url = makePDF() else { return }
+        if MFMailComposeViewController.canSendMail() {
+            pdfData = PDFAttachment(data: try? Data(contentsOf: url))
+        } else {
+            // 未配系统邮件账户（国内常见）——直接走分享面板
+            share(url)
+        }
+    }
+
+    private func share(_ url: URL) {
+        let av = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        UIApplication.shared.connectedScenes
+            .compactMap { ($0 as? UIWindowScene)?.keyWindow?.rootViewController }
+            .first?.present(av, animated: true)
+    }
+
+    // MARK: - PDF（逻辑未改，仅换色）
 
     private var textReport: String {
         var lines = ["HyperLog Joint Episode Report"]
@@ -124,12 +334,11 @@ struct DoctorReportView: View {
         return lines.joined(separator: "\n")
     }
 
-    /// PDF：概览+图表（Area横条图/按日趋势竖条图）+Episode details+Beighton——健哥 11-04 令：不能只有文字
     private func makePDF() -> URL? {
         let pageRect = CGRect(x: 0, y: 0, width: 595, height: 842) // A4
         let renderer = UIGraphicsPDFRenderer(bounds: pageRect)
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("HyperLog-Report.pdf")
-        let purple = UIColor(red: 0.45, green: 0.3, blue: 0.7, alpha: 1)
+        let purple = Theme.accentUI
         let groups = EntryStore.grouped(ranged)
 
         // 按日统计（范围天数内每天的发作数）
@@ -188,7 +397,7 @@ struct DoctorReportView: View {
             for (i, (day, count)) in days.enumerated() {
                 let h = CGFloat(count) / CGFloat(maxDay) * (chartH - 14)
                 let x = 40 + CGFloat(i) * barSlot + barSlot * 0.2
-                cg.setFillColor(count >= 3 ? UIColor.systemOrange.cgColor : purple.cgColor)
+                cg.setFillColor(count >= 3 ? Theme.severityUI(3).cgColor : purple.cgColor)
                 cg.fill(CGRect(x: x, y: y + chartH - max(h, count > 0 ? 3 : 0), width: barSlot * 0.6, height: max(h, count > 0 ? 3 : 0)))
                 if count > 0 {
                     ("\(count)" as NSString).draw(at: CGPoint(x: x - 2, y: y + chartH - max(h, 3) - 10),

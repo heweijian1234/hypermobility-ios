@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HyperLog · UI 评审与优化方案</title>
+<style>
+:root{
+  --page:#EEEAE0;
+  --panel:#FBFAF5;
+  --surface:#FFFDF8;
+  --paper:#F6F3EC;
+  --ink:#1B1A17;
+  --ink2:#5F5C53;
+  --ink3:#8D8879;
+  --hair:#E4DDCB;
+  --hair2:#D6CEBA;
+  --primary:#22344D;
+  --sev1:#8A6E2B; --sev2:#A5661F; --sev3:#A34A24; --sev4:#7C2D1C;
+  --sev1bg:#F0E7D0; --sev2bg:#F5E5CE; --sev3bg:#F6DFD3; --sev4bg:#F1D9D1;
+  --rust:#A34A24;
+  --serif:"New York","Iowan Old Style",Charter,Georgia,"Songti SC",serif;
+  --sans:"SF Pro Text",-apple-system,"Segoe UI","Microsoft YaHei","Noto Sans SC",sans-serif;
+  --mono:"SF Mono",ui-monospace,Consolas,monospace;
+  --radius:18px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--page);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:#22344d;color:#fff}
+.wrap{max-width:1200px;margin:0 auto;padding:0 26px 90px}
+
+/* ---------- top bar ---------- */
+.topbar{
+  position:sticky;top:0;z-index:60;
+  backdrop-filter:blur(14px);
+  background:rgba(238,234,224,.86);
+  border-bottom:1px solid var(--hair2);
+}
+.topbar-in{
+  max-width:1200px;margin:0 auto;padding:12px 26px;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.brand{display:flex;align-items:center;gap:9px;font-weight:650;letter-spacing:-.01em}
+.brand .dot{width:22px;height:22px;border-radius:7px;background:var(--primary);display:grid;place-items:center}
+.brand .dot svg{width:13px;height:13px;color:#fff}
+.brand small{font-weight:500;color:var(--ink2);font-size:12.5px}
+.top-legend{margin-left:auto;display:flex;gap:16px;font-size:12px;color:var(--ink2);align-items:center}
+.legend-i{display:inline-flex;align-items:center;gap:6px}
+.legend-i i{width:9px;height:9px;border-radius:50%;display:block}
+
+/* ---------- hero ---------- */
+.hero{padding:56px 0 34px;border-bottom:1px solid var(--hair2)}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);margin-bottom:18px}
+h1{
+  font-family:var(--serif);font-weight:600;letter-spacing:-.025em;line-height:1.06;
+  font-size:clamp(32px,4.2vw,52px);max-width:23ch;margin-bottom:20px;
+  text-wrap:balance;
+}
+h1 em{font-style:normal;color:var(--rust)}
+.lede{max-width:62ch;color:var(--ink2);font-size:15.5px}
+.lede b{color:var(--ink);font-weight:600}
+.scores{display:grid;grid-template-columns:repeat(6,1fr);gap:0;margin-top:38px;border-top:1px solid var(--hair2)}
+.score{padding:18px 18px 18px 0;border-right:1px solid var(--hair);}
+.score:last-child{border-right:0}
+.score .k{font-size:11.5px;color:var(--ink2);letter-spacing:.02em;margin-bottom:8px;height:2.6em;line-height:1.3}
+.score .v{font-family:var(--serif);font-size:32px;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.score .v span{font-size:13px;color:var(--ink3);letter-spacing:0}
+.bar{height:3px;background:var(--hair);margin-top:11px;border-radius:2px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--rust);border-radius:2px}
+.score.total .v{color:var(--rust)}
+
+/* ---------- section head ---------- */
+.sec{padding-top:56px}
+.sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:22px}
+.sec-num{font-family:var(--mono);font-size:11px;color:var(--ink3);letter-spacing:.1em}
+.sec-head h2{font-family:var(--serif);font-size:26px;font-weight:600;letter-spacing:-.02em}
+.sec-head p{color:var(--ink2);font-size:13px;margin-left:auto;max-width:40ch;text-align:right;flex:0 0 auto;line-height:1.5}
+
+/* ---------- stage ---------- */
+.stage{background:var(--panel);border:1px solid var(--hair2);border-radius:var(--radius);padding:22px 22px 26px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;padding-bottom:20px;border-bottom:1px solid var(--hair);margin-bottom:26px}
+.tab{
+  font-family:var(--sans);font-size:13px;font-weight:550;color:var(--ink2);
+  background:transparent;border:1px solid transparent;border-radius:999px;
+  padding:7px 14px;cursor:pointer;transition:all .18s ease-out;display:flex;align-items:center;gap:7px;
+}
+.tab:hover{background:#fff;border-color:var(--hair2);color:var(--ink)}
+.tab[aria-selected="true"]{background:var(--primary);color:#fff;border-color:var(--primary)}
+.tab .n{font-family:var(--mono);font-size:10px;opacity:.55}
+
+.devices{display:flex;gap:52px;justify-content:center;align-items:flex-start;flex-wrap:wrap}
+.phone-col{display:flex;flex-direction:column;gap:12px;align-items:center}
+.ph-label{display:flex;flex-direction:column;align-items:center;gap:2px}
+.ph-label b{font-size:13px;letter-spacing:.02em}
+.ph-label span{font-family:var(--mono);font-size:10px;color:var(--ink3)}
+.slot{width:335px;height:726px;position:relative}
+.dev{
+  position:absolute;top:0;left:0;width:390px;height:844px;
+  transform:scale(.86);transform-origin:top left;
+  border-radius:52px;padding:9px;background:#1B1C1E;
+  box-shadow:0 26px 46px -26px rgba(27,26,23,.5),0 2px 0 rgba(255,255,255,.35) inset;
+}
+.scr{
+  width:100%;height:100%;border-radius:44px;overflow:hidden;position:relative;
+  background:#fff;display:flex;flex-direction:column;
+}
+.scr.paper{background:var(--paper)}
+.notch{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:112px;height:26px;background:#1B1C1E;border-radius:14px;z-index:20}
+
+/* status bar */
+.sb{height:50px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 5px;flex-shrink:0;font-size:13px;font-weight:600;letter-spacing:.01em;z-index:10;position:relative}
+.sb .right{display:flex;align-items:center;gap:5px}
+.sig{display:flex;align-items:flex-end;gap:2px;height:9px}
+.sig i{width:2.6px;background:currentColor;border-radius:1px;display:block}
+.sig i:nth-child(1){height:3px}.sig i:nth-child(2){height:5px}.sig i:nth-child(3){height:7px}.sig i:nth-child(4){height:9px}
+.bat{width:19px;height:9.5px;border:1.2px solid currentColor;border-radius:2.6px;position:relative;opacity:.9}
+.bat::after{content:"";position:absolute;left:1.6px;top:1.6px;bottom:1.6px;width:11px;background:currentColor;border-radius:1px}
+
+/* current iOS chrome */
+.navbar{height:44px;display:flex;align-items:center;padding:0 14px;flex-shrink:0;color:#007AFF;background:#fff;border-bottom:.5px solid #E6E6EA}
+.navbar .nav-title{position:absolute;left:0;right:0;text-align:center;font-size:16px;font-weight:600;color:#000;pointer-events:none}
+.navbar .ic{width:23px;height:23px}
+.navbar .nav-r{margin-left:auto;display:flex;gap:16px}
+.list{flex:1;overflow:hidden;background:#fff}
+
+.row-c{display:flex;gap:12px;padding:11px 16px;border-bottom:.5px solid #E9E9ED;position:relative}
+.row-c:last-child{border-bottom:0}
+.thumb{width:52px;height:52px;border-radius:8px;background:rgba(175,82,222,.12);display:grid;place-items:center;color:#AF52DE;flex-shrink:0;overflow:hidden}
+.thumb .ic{width:22px;height:22px}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.row-body{flex:1;min-width:0}
+.row-l1{display:flex;align-items:center;gap:6px}
+.part{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.tag{font-size:9.5px;font-weight:700;padding:1px 5px;border-radius:999px;background:rgba(255,149,0,.18);color:#C86A00;line-height:1.5}
+.pill-sev{margin-left:auto;font-size:9.5px;font-weight:600;padding:2px 6px;border-radius:999px;white-space:nowrap;line-height:1.5}
+.sev0{background:rgba(52,199,89,.18);color:#1E8E3E}
+.sev1{background:rgba(255,204,0,.20);color:#D8A800}
+.sev2{background:rgba(255,149,0,.18);color:#C86A00}
+.sev3{background:rgba(255,59,48,.16);color:#D32B21}
+.pill-sev.long{max-width:116px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row-meta{font-size:11.5px;color:#8A8A8E;margin-top:3px;display:flex;gap:7px;white-space:nowrap;overflow:hidden}
+.row-notes{font-size:11.5px;color:#8A8A8E;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row-date{font-size:10.5px;color:#A9A9AE;margin-top:3px}
+
+.fab{position:absolute;z-index:30;width:64px;height:64px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;color:#fff}
+.fab .ic{width:20px;height:20px}
+.fab span{font-size:9px;font-weight:700;letter-spacing:-.01em}
+.fab-quick{left:16px;bottom:16px;background:#AF52DE}
+.fab-plus{left:50%;transform:translateX(-50%);bottom:10px;background:rgb(140,115,191)}
+.fab-more{right:16px;bottom:16px;background:rgb(140,115,191)}
+
+/* audit annotation */
+.audit{
+  position:absolute;z-index:40;left:14px;right:14px;
+  border:1.5px dashed var(--rust);background:rgba(255,253,248,.97);
+  border-radius:10px;padding:9px 11px;font-size:11px;line-height:1.45;color:var(--ink);
+  box-shadow:0 8px 20px -10px rgba(0,0,0,.3)
+}
+.audit b{color:var(--rust);font-weight:700;display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;margin-bottom:3px}
+.audit code{font-family:var(--mono);font-size:10px;background:#F1D9D1;padding:0 3px;border-radius:3px}
+
+.badge-n{
+  position:absolute;z-index:45;width:22px;height:22px;border-radius:50%;
+  background:var(--rust);color:#fff;font-family:var(--mono);font-size:11px;font-weight:700;
+  display:grid;place-items:center;box-shadow:0 0 0 3px rgba(255,255,255,.9);
+  transition:transform .2s;
+}
+.badge-n.pulse{animation:pulse .9s ease-out 2}
+@keyframes pulse{0%{transform:scale(1)}40%{transform:scale(1.45)}100%{transform:scale(1)}}
+
+/* ---------- findings ---------- */
+.findings{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:26px}
+.find{
+  background:var(--surface);border:1px solid var(--hair);border-radius:12px;padding:16px 18px;
+  cursor:pointer;transition:border-color .2s,box-shadow .2s;position:relative;
+}
+.find:hover{border-color:var(--hair2);box-shadow:0 6px 18px -14px rgba(27,26,23,.6)}
+.find.hl{border-color:var(--rust)}
+.find h4{font-size:14.5px;font-weight:650;letter-spacing:-.01em;margin-bottom:9px;padding-left:30px}
+.find .idx{
+  position:absolute;left:18px;top:16px;width:20px;height:20px;border-radius:5px;
+  background:var(--primary);color:#fff;font-family:var(--mono);font-size:10.5px;display:grid;place-items:center;font-weight:700;
+}
+.find.p0 .idx{background:var(--rust)}
+.find dl{display:grid;grid-template-columns:44px 1fr;gap:4px 10px;font-size:12.5px;line-height:1.55}
+.find dt{color:var(--ink3);font-size:11px;letter-spacing:.02em;padding-top:1px}
+.find dd{color:var(--ink2)}
+.find dd code{font-family:var(--mono);font-size:11px;background:#EFEBDF;padding:1px 4px;border-radius:3px;color:var(--ink)}
+.find .fix{color:var(--ink);font-weight:500}
+.pri{position:absolute;right:16px;top:16px;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;color:var(--ink3)}
+
+/* ---------- design system ---------- */
+.ds-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:18px}
+.card{background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:22px}
+.card h3{font-family:var(--serif);font-size:19px;font-weight:600;margin-bottom:4px;letter-spacing:-.01em}
+.card .sub{font-size:12px;color:var(--ink3);margin-bottom:18px;font-family:var(--mono);letter-spacing:.04em}
+.sw{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--hair)}
+.sw:last-child{border-bottom:0}
+.chip-c{width:44px;height:44px;border-radius:9px;flex-shrink:0;border:1px solid rgba(0,0,0,.08)}
+.sw .nm{font-size:13px;font-weight:600;letter-spacing:-.01em}
+.sw .hx{font-family:var(--mono);font-size:11px;color:var(--ink3)}
+.sw .ct{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink2);text-align:right;line-height:1.4}
+.ok{color:#2E6B45}
+.no{color:var(--rust)}
+.ramp{display:flex;margin:8px 0 14px;border-radius:8px;overflow:hidden}
+.ramp div{height:38px;flex:1;display:grid;place-items:center;color:#fff;font-size:10px;font-weight:700;letter-spacing:.02em}
+
+.type-row{display:grid;grid-template-columns:92px 1fr 110px;gap:12px;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--hair)}
+.type-row:last-child{border-bottom:0}
+.type-row .lbl{font-family:var(--mono);font-size:10px;color:var(--ink3);letter-spacing:.04em}
+.type-row .spec{font-family:var(--mono);font-size:10px;color:var(--ink3);text-align:right}
+.serif-sample{font-family:var(--serif);font-weight:600;letter-spacing:-.02em}
+
+.comp-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.btn-p{background:var(--primary);color:#fff;border-radius:12px;padding:11px 20px;font-size:13.5px;font-weight:600;border:0;display:inline-flex;align-items:center;gap:8px}
+.btn-p .ic{width:16px;height:16px}
+.btn-s{background:transparent;color:var(--primary);border:1.4px solid var(--hair2);border-radius:12px;padding:10px 18px;font-size:13.5px;font-weight:600}
+.chipx{border:1.4px solid var(--hair2);border-radius:9px;padding:7px 12px;font-size:12.5px;color:var(--ink2);background:#fff}
+.chipx.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+.pillx{border-radius:999px;padding:3px 9px;font-size:10px;font-weight:700;letter-spacing:.05em;color:#fff}
+
+/* ---------- roadmap ---------- */
+.road{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.col-p{background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:20px}
+.col-p .ph{display:flex;align-items:baseline;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--hair);margin-bottom:14px}
+.col-p .ph b{font-family:var(--serif);font-size:22px}
+.col-p .ph span{font-size:12px;color:var(--ink3)}
+.col-p.p0 .ph b{color:var(--rust)}
+.col-p ul{list-style:none;display:flex;flex-direction:column;gap:11px}
+.col-p li{font-size:13px;line-height:1.5;color:var(--ink2);padding-left:16px;position:relative}
+.col-p li::before{content:"";position:absolute;left:0;top:7px;width:5px;height:5px;border-radius:50%;background:var(--hair2)}
+.col-p li b{color:var(--ink);font-weight:600}
+.col-p li em{font-style:normal;font-family:var(--mono);font-size:10.5px;color:var(--ink3);display:block;margin-top:2px}
+
+/* ---------- handoff ---------- */
+.code{background:#1E2124;color:#E6E3DA;border-radius:12px;padding:18px 20px;overflow:auto;font-family:var(--mono);font-size:12px;line-height:1.7;white-space:pre-wrap;word-break:break-word;tab-size:2}
+.code .c{color:#7F8B78}
+.code .k{color:#D9A66B}
+.code .s{color:#9DBE8E}
+.code .t{color:#8FB3D9}
+.hand-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.hand-note{font-size:12.5px;color:var(--ink2);margin-top:12px;line-height:1.65}
+.hand-note b{color:var(--ink)}
+table.spec{width:100%;border-collapse:collapse;font-size:12.5px}
+table.spec th{text-align:left;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);font-weight:600;padding:0 0 8px;border-bottom:1px solid var(--hair)}
+table.spec td{padding:9px 0;border-bottom:1px solid var(--hair);vertical-align:top;color:var(--ink2)}
+table.spec td:first-child{color:var(--ink);font-weight:600;white-space:nowrap;padding-right:14px}
+table.spec code{font-family:var(--mono);font-size:11px;background:#EFEBDF;padding:1px 4px;border-radius:3px;color:var(--ink)}
+
+footer{margin-top:70px;padding-top:22px;border-top:1px solid var(--hair2);display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink3);flex-wrap:wrap;gap:10px}
+
+/* ============ PROPOSED SCREEN STYLES ============ */
+.px{flex:1;display:flex;flex-direction:column;min-height:0;background:var(--paper);color:var(--ink)}
+.p-top{display:flex;align-items:flex-start;justify-content:space-between;padding:6px 22px 0;flex-shrink:0}
+.p-eyebrow{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--ink3);text-transform:uppercase;margin-bottom:2px}
+.p-h1{font-family:var(--serif);font-size:31px;font-weight:600;letter-spacing:-.03em;line-height:1.1}
+.p-icobtn{width:34px;height:34px;border-radius:50%;border:1.2px solid var(--hair2);display:grid;place-items:center;color:var(--ink2);background:transparent;flex-shrink:0}
+.p-icobtn .ic{width:17px;height:17px}
+
+.wk{margin:14px 18px 0;border:1px solid var(--hair2);background:var(--surface);border-radius:14px;padding:14px 14px 12px;flex-shrink:0}
+.wk-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.wk-head .cap{font-family:var(--mono);font-size:9px;letter-spacing:.13em;color:var(--ink3)}
+.wk-link{font-size:10.5px;font-weight:600;color:var(--primary);display:flex;align-items:center;gap:2px}
+.wk-link .ic{width:11px;height:11px}
+.wk-strip{display:flex;gap:4px;height:58px;align-items:flex-end}
+.wk-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;height:100%}
+.wk-bar{width:100%;border-radius:3px 3px 2px 2px;background:var(--hair);min-height:5px}
+.wk-d{font-size:9px;color:var(--ink3);font-family:var(--mono)}
+.wk-col.today .wk-d{color:var(--paper);font-weight:700;background:var(--ink);border-radius:3px;padding:1px 4px;margin-bottom:-1px}
+.wk-foot{display:flex;align-items:baseline;gap:7px;margin-top:11px;padding-top:11px;border-top:1px solid var(--hair)}
+.wk-foot b{font-family:var(--serif);font-size:24px;line-height:1;letter-spacing:-.02em}
+.wk-foot .u{font-size:11px;color:var(--ink2)}
+.wk-foot .sep{width:1px;height:11px;background:var(--hair2);margin:0 2px}
+.wk-foot .m{font-size:10.5px;color:var(--ink2)}
+.wk-foot .delta{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--rust);font-weight:700}
+
+.p-sec{display:flex;align-items:baseline;justify-content:space-between;padding:18px 22px 8px;flex-shrink:0}
+.p-sec .cap{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--ink3)}
+.p-sec .act{font-size:10.5px;color:var(--primary);font-weight:600;display:flex;align-items:center;gap:3px}
+.p-sec .act .ic{width:10px;height:10px}
+
+.p-list{flex:1;overflow:hidden;padding:0 18px}
+.p-row{display:grid;grid-template-columns:50px 1fr auto;gap:11px;padding:11px 0;border-bottom:1px solid var(--hair);align-items:start}
+.p-row:last-child{border-bottom:0}
+.p-ph{width:50px;height:50px;border-radius:11px;border:1px solid var(--hair2);overflow:hidden;background:#EDE8DA;position:relative}
+.p-ph .grad{position:absolute;inset:0;background:linear-gradient(150deg,#D9CDB8,#B9A98F 60%,#9C8B72)}
+.p-ph .grad.b{background:linear-gradient(150deg,#CFC6B5,#A9A18F)}
+.p-ph .grad.c{background:linear-gradient(150deg,#E0D3BE,#C0A98C)}
+.p-ph .grad.d{background:linear-gradient(150deg,#D3C4AE,#B0997D)}
+.p-ph .draft{position:absolute;inset:0;display:grid;place-items:center;border:1.5px dashed var(--hair2);border-radius:11px;color:var(--ink3)}
+.p-ph .draft .ic{width:16px;height:16px}
+.p-name{font-family:var(--serif);font-size:17px;font-weight:600;letter-spacing:-.02em;line-height:1.25}
+.p-meta{font-size:10.5px;color:var(--ink2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-note{font-size:10.5px;color:var(--ink3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-sev{font-size:8.5px;font-weight:800;letter-spacing:.09em;color:#fff;padding:3px 7px;border-radius:999px;white-space:nowrap;margin-top:2px}
+
+.p-bottom{flex-shrink:0;padding:10px 18px 26px;background:var(--paper);border-top:1px solid var(--hair2);display:flex;gap:9px}
+.p-cta{flex:1;background:var(--primary);color:#fff;border-radius:13px;height:50px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14.5px;font-weight:600;letter-spacing:-.01em}
+.p-cta .ic{width:17px;height:17px}
+
+/* empty state proposed */
+.p-empty{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 30px 60px}
+.p-empty .em-h{font-family:var(--serif);font-size:30px;line-height:1.14;font-weight:600;letter-spacing:-.03em;margin-bottom:12px}
+.p-empty .em-p{font-size:13px;color:var(--ink2);line-height:1.6;margin-bottom:20px}
+.p-empty .em-lock{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--ink2);padding:9px 11px;border:1px solid var(--hair2);border-radius:9px;background:var(--surface);margin-bottom:22px}
+.p-empty .em-lock .ic{width:14px;height:14px;color:var(--primary);flex-shrink:0}
+
+/* capture sheet */
+.dim{position:absolute;inset:0;background:rgba(27,26,23,.42);z-index:25}
+.sheet{
+  position:absolute;left:0;right:0;bottom:0;z-index:26;background:var(--surface);
+  border-radius:22px 22px 0 0;padding:9px 20px 24px;box-shadow:0 -10px 30px -12px rgba(0,0,0,.35);
+  display:flex;flex-direction:column;gap:0;
+}
+.grab{width:34px;height:4px;border-radius:2px;background:var(--hair2);margin:0 auto 14px}
+.sheet h2{font-family:var(--serif);font-size:23px;font-weight:600;letter-spacing:-.025em;line-height:1.2}
+.sheet .now{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10.5px;color:var(--ink2);margin-top:4px}
+.sheet .now .ic{width:11px;height:11px}
+.flab{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--ink3);margin:16px 0 8px}
+.chips{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.chip-p{border:1.2px solid var(--hair2);border-radius:8px;padding:9px 2px;font-size:10.5px;text-align:center;color:var(--ink2);background:#fff;font-weight:500;letter-spacing:-.01em}
+.chip-p.on{background:var(--primary);color:#fff;border-color:var(--primary);font-weight:600}
+.seg4{display:grid;grid-template-columns:repeat(4,1fr);border:1.2px solid var(--hair2);border-radius:10px;overflow:hidden;background:#fff}
+.seg4 div{padding:11px 2px;text-align:center;font-size:11px;font-weight:600;color:var(--ink2);border-right:1px solid var(--hair);letter-spacing:-.01em}
+.seg4 div:last-child{border-right:0}
+.seg4 div.on{color:#fff}
+.seg4 div.on.s1{background:var(--sev1)}
+.seg4 div.on.s2{background:var(--sev2)}
+.seg4 div.on.s3{background:var(--sev3)}
+.seg4 div.on.s4{background:var(--sev4)}
+.seg-hint{font-size:10px;color:var(--ink3);margin-top:6px}
+.note-line{border:1.2px solid var(--hair2);border-radius:9px;padding:10px 12px;font-size:11.5px;color:var(--ink3);background:#fff}
+.sheet-btns{display:flex;gap:9px;margin-top:18px;align-items:center}
+.sheet-btns .p-cta{height:46px;font-size:14px}
+.btn-ghost{height:46px;padding:0 16px;border-radius:13px;border:1.4px solid var(--hair2);display:flex;align-items:center;font-size:13px;font-weight:600;color:var(--primary)}
+
+/* form proposed */
+.f-top{display:flex;align-items:center;justify-content:space-between;padding:0 18px;height:44px;border-bottom:1px solid var(--hair);flex-shrink:0}
+.f-top .x{font-size:14px;color:var(--ink2)}
+.f-top .t{font-size:14.5px;font-weight:600;letter-spacing:-.01em}
+.f-top .s{font-size:14px;font-weight:600;color:var(--primary)}
+.f-body{flex:1;overflow:hidden;padding:14px 18px 0}
+.f-block{background:var(--surface);border:1px solid var(--hair2);border-radius:12px;padding:12px 12px 13px;margin-bottom:10px}
+.f-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--hair);font-size:12.5px}
+.f-row:last-child{border-bottom:0}
+.f-row .l{color:var(--ink)}
+.f-row .r{color:var(--ink2);display:flex;align-items:center;gap:6px;font-size:11.5px}
+.f-row .r .ic{width:12px;height:12px;color:var(--ink3)}
+.f-row .r .val{color:var(--ink);font-weight:550}
+
+/* report proposed */
+.r-big{margin:0 18px;border:1px solid var(--hair2);border-radius:14px;background:var(--surface);padding:16px 16px 14px}
+.r-big .cap{font-family:var(--mono);font-size:9px;letter-spacing:.13em;color:var(--ink3)}
+.r-num{display:flex;align-items:baseline;gap:8px;margin-top:2px}
+.r-num b{font-family:var(--serif);font-size:46px;line-height:1;letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+.r-num span{font-size:12px;color:var(--ink2)}
+.r-num .d{margin-left:auto;font-family:var(--mono);font-size:10px;font-weight:700;color:var(--rust)}
+.r-meta{display:flex;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--hair);font-size:10.5px;color:var(--ink2)}
+.r-meta b{color:var(--ink);font-weight:650}
+.r-bars{margin:12px 18px 0;border:1px solid var(--hair2);border-radius:14px;background:var(--surface);padding:8px 16px 6px}
+.r-bar{display:grid;grid-template-columns:62px 1fr 26px;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--hair);font-size:11.5px}
+.r-bar:last-child{border-bottom:0}
+.r-bar .nm{color:var(--ink);font-weight:550}
+.r-bar .tr{height:7px;background:var(--paper);border-radius:4px;overflow:hidden}
+.r-bar .tr i{display:block;height:100%;background:var(--primary);border-radius:4px}
+.r-bar .cd{text-align:right;font-family:var(--mono);font-size:10.5px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.daystrip{display:flex;gap:2.5px;margin:12px 18px 0;align-items:flex-end;height:30px}
+.daystrip i{flex:1;border-radius:2px;background:var(--hair);display:block}
+
+/* compare proposed */
+.cmp-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 18px 0}
+.cmp-cell{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--hair2);height:196px;background:#EDE8DA}
+.cmp-cell .grad{position:absolute;inset:0;background:linear-gradient(160deg,#DCD0BB,#BFAC8E 55%,#9C8A70)}
+.cmp-cell.b .grad{background:linear-gradient(160deg,#CBBCA6,#A99B85 55%,#8A7B65)}
+.cmp-cell .tag{position:absolute;left:8px;top:8px;background:rgba(255,253,248,.94);color:var(--ink);font-family:var(--mono);font-size:9px;letter-spacing:.1em;padding:3px 7px;border-radius:5px;font-weight:700}
+.cmp-cell .date{position:absolute;left:8px;bottom:8px;color:#fff;font-size:10px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.cmp-mid{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px 0 0;font-family:var(--mono);font-size:9.5px;color:var(--ink3);letter-spacing:.08em}
+.film{display:flex;gap:6px;margin:12px 18px 0}
+.film div{flex:1;height:52px;border-radius:7px;border:1px solid var(--hair2);background:linear-gradient(150deg,#D9CDB8,#B9A98F);position:relative}
+.film div.on{box-shadow:0 0 0 2px var(--paper),0 0 0 3.4px var(--primary)}
+.film div .sd{position:absolute;right:3px;bottom:3px;width:6px;height:6px;border-radius:50%}
+
+@media (max-width:1040px){
+  .scores{grid-template-columns:repeat(3,1fr)}
+  .score:nth-child(3){border-right:0}
+  .score:nth-child(n+4){border-top:1px solid var(--hair)}
+  .findings,.ds-grid,.hand-grid,.road{grid-template-columns:1fr}
+  .sec-head p{display:none}
+}
+@media (max-width:760px){
+  .devices{gap:26px}
+  .slot{width:335px;height:726px}
+  .wrap{padding:0 16px 60px}
+  .scores{grid-template-columns:repeat(2,1fr)}
+  .hero{padding:34px 0 26px}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 11v5.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="7.9" r="1.05" fill="currentColor"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3.6" y="3.6" width="7.1" height="7.1" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.7"/><rect x="13.3" y="3.6" width="7.1" height="7.1" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.7"/><rect x="3.6" y="13.3" width="7.1" height="7.1" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.7"/><rect x="13.3" y="13.3" width="7.1" height="7.1" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13.4 2.2 4.8 13.6h5.3L9.7 21.8 18.6 10.2h-5.4z" fill="currentColor"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5.2v13.6M5.2 12h13.6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.4" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="18.6" cy="12" r="1.7" fill="currentColor"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><rect x="2.9" y="6.6" width="18.2" height="12.8" rx="3.2" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8.7 6.6l1-1.9h4.6l1 1.9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.6" y="10.4" width="14.8" height="10.4" rx="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8.3 10.4V7.7a3.7 3.7 0 0 1 7.4 0v2.7" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6.2 3.6h6.9l5.2 4.5v12.3H6.2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M13 3.9v4.4h4.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M9.1 12.4h5.8M9.1 15.9h5.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9.2 5.6 15.6 12l-6.4 6.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M5.6 9.2 12 15.6l6.4-6.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3.1" y="4.6" width="17.8" height="14.8" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="8.7" cy="10" r="1.6" fill="currentColor"/><path d="M4.6 17.6 9.9 12.7l3.3 3.1 2.6-2.3 3.6 4.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M4.9 12.7 9.7 17.5 19.3 6.9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.7" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.4V12l3.3 2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3.2 21 8l-9 4.8L3 8z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M3.6 12.6 12 17l8.4-4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M3.6 16.6 12 21l8.4-4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div class="topbar">
+  <div class="topbar-in">
+    <div class="brand">
+      <span class="dot"><svg><use href="#i-layers"/></svg></span>
+      HyperLog
+      <small>UI 评审 · v0.3.0 源码基线</small>
+    </div>
+    <div class="top-legend">
+      <span class="legend-i"><i style="background:#007AFF"></i>现状</span>
+      <span class="legend-i"><i style="background:#8A6E2B"></i>优化（热力梯度）</span>
+      <span class="legend-i"><i style="background:#A34A24"></i>问题标记</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow">SaaS项目 / hypermobility-ios / 设计评审 2026-11-25</div>
+    <h1>界面能用，但<em>没替疼痛中的人想过</em>。</h1>
+    <p class="lede">
+      HyperLog 的功能密度是够的：一键快记、九项 Beighton、多图、PDF 报告都在。问题出在<b>核心路径被三个同等重量的圆按钮摊平了</b>，
+      而真正值钱的「模式」被锁在二级页；<b>严重度用交通灯配色</b>，黄色文字在白底上只有 1.5:1，浅色模式基本看不见；
+      <b>一键快记会写错数据</b>——部位沿用上一条、程度写死 Moderate。下面 6 屏逐一对照，右侧是可落地的改法。
+    </p>
+
+    <div class="scores">
+      <div class="score">
+        <div class="k">视觉一致性</div>
+        <div class="v">4<span>/10</span></div>
+        <div class="bar"><i style="width:40%"></i></div>
+      </div>
+      <div class="score">
+        <div class="k">信息层级</div>
+        <div class="v">4<span>/10</span></div>
+        <div class="bar"><i style="width:40%"></i></div>
+      </div>
+      <div class="score">
+        <div class="k">核心路径效率</div>
+        <div class="v">3<span>/10</span></div>
+        <div class="bar"><i style="width:30%"></i></div>
+      </div>
+      <div class="score">
+        <div class="k">可访问性</div>
+        <div class="v">4<span>/10</span></div>
+        <div class="bar"><i style="width:40%"></i></div>
+      </div>
+      <div class="score">
+        <div class="k">品牌辨识度</div>
+        <div class="v">3<span>/10</span></div>
+        <div class="bar"><i style="width:30%"></i></div>
+      </div>
+      <div class="score total">
+        <div class="k">综合（对照 WCAG AA / iOS HIG）</div>
+        <div class="v">3.6<span>/10</span></div>
+        <div class="bar"><i style="width:36%"></i></div>
+      </div>
+    </div>
+  </header>
+
+  <section class="sec">
+    <div class="sec-head">
+      <span class="sec-num">01</span>
+      <h2>逐屏对照</h2>
+      <p>左侧是源码渲染的现状（含 iOS 默认控件与硬编码色值），右侧是建议稿。点标签切屏，点问题卡可定位标记。</p>
+    </div>
+
+    <div class="stage" id="stage">
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" data-s="home" aria-selected="true"><span class="n">01</span>首页</button>
+        <button class="tab" role="tab" data-s="capture" aria-selected="false"><span class="n">02</span>快速记录</button>
+        <button class="tab" role="tab" data-s="editor" aria-selected="false"><span class="n">03</span>详细记录</button>
+        <button class="tab" role="tab" data-s="report" aria-selected="false"><span class="n">04</span>报告分享</button>
+        <button class="tab" role="tab" data-s="compare" aria-selected="false"><span class="n">05</span>照片对比</button>
+        <button class="tab" role="tab" data-s="empty" aria-selected="false"><span class="n">06</span>空状态</button>
+      </div>
+
+      <!-- ============ 01 HOME ============ -->
+      <div class="pair" data-s="home">
+        <div class="devices">
+          <div class="phone-col">
+            <div class="ph-label"><b>现状</b><span>ContentView.swift</span></div>
+            <div class="slot"><div class="dev"><div class="scr ios">
+              <div class="notch"></div>
+              <div class="sb"><span>9:41</span><span class="right"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="bat"></span></span></div>
+              <div class="navbar" style="position:relative">
+                <svg class="ic"><use href="#i-info"/></svg>
+                <span class="nav-title">HyperLog</span>
+                <span class="nav-r"><svg class="ic"><use href="#i-grid"/></svg></span>
+              </div>
+              <div class="list">
+                <div class="row-c">
+                  <div class="thumb" style="background:none;padding:0"><div class="grad" style="width:100%;height:100%;background:linear-gradient(150deg,#D3C4AE,#A28C6E)"></div></div>
+                  <div class="row-body">
+                    <div class="row-l1"><span class="part">Shoulder</span><span class="pill-sev sev2">Significant</span></div>
+                    <div class="row-meta"><span>pain: A few minutes</span><span>Repositioned at hospital</span></div>
+                    <div class="row-notes">Slipped reaching for a box overhead.</div>
+                    <div class="row-date">Nov 25, 3:42 PM</div>
+                  </div>
+                </div>
+                <div class="row-c">
+                  <div class="thumb"><svg class="ic"><use href="#i-camera"/></svg></div>
+                  <div class="row-body">
+                    <div class="row-l1"><span class="part">Knee</span><span class="tag">To fill</span><span class="pill-sev sev2">Significant</span></div>
+                    <div class="row-meta"><span>pain: 1-2 hours</span><span>Self-repositioned</span></div>
+                    <div class="row-notes">After long sitting at the desk.</div>
+                    <div class="row-date">Nov 23, 6:10 PM</div>
+                  </div>
+                </div>
+                <div class="row-c">
+                  <div class="thumb"><svg class="ic"><use href="#i-camera"/></svg></div>
+                  <div class="row-body">
+                    <div class="row-l1"><span class="part">Fingers</span><span class="pill-sev sev1">Mild</span></div>
+                    <div class="row-meta"><span>pain: ~30 minutes</span><span>Went back on its own</span></div>
+                    <div class="row-notes">Writing, no clear trigger.</div>
+                    <div class="row-date">Nov 22, 11:05 AM</div>
+                  </div>
+                </div>
+                <div class="row-c">
+                  <div class="thumb"><svg class="ic"><use href="#i-camera"/></svg></div>
+                  <div class="row-body">
+                    <div class="row-l1"><span class="part">Wrist</span><span class="pill-sev sev3 long">Severe (subluxation/dislocation)</span></div>
+                    <div class="row-meta"><span>pain: Half a day</span><span>Self-repositioned</span></div>
+                    <div class="row-notes">Phone use, thumb typing.</div>
+                    <div class="row-date">Nov 21, 8:20 AM</div>
+                  </div>
+                </div>
+              </div>
+              <div class="fab fab-quick"><svg class="ic"><use href="#i-bolt"/></svg><span>Quick Log</span></div>
+              <div class="fab fab-plus"><svg class="ic" style="width:26px;height:26px"><use href="#i-plus"/></svg></div>
+              <div class="fab fab-more"><svg class="ic"><use href="#i-more"/></svg><span>More</span></div>
+              <div class="badge-n" data-f="D1" style="left:196px;top:730px">1</div>
+              <div class="badge-n" data-f="D5" style="left:250px;top:58px">5</div>
+            </div></div></div>
+          </div>
+
+          <div class="phone-col">
+            <div class="ph-label"><b>建议稿</b><span>本周概览 + 单一主路径</span></div>
+            <div class="slot"><div class="dev"><div class="scr paper">
+              <div class="notch"></div>
+              <div class="sb"><span>9:41</span><span class="right"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="bat"></span></span></div>
+              <div class="px">
+                <div class="p-top">
+                  <div>
+                    <div class="p-eyebrow">Nov 19 — Nov 25</div>
+                    <div class="p-h1">This week</div>
+                  </div>
+                  <div class="p-icobtn"><svg class="ic"><use href="#i-more"/></svg></div>
+                </div>
+
+                <div class="wk">
+                  <div class="wk-head">
+                    <span class="cap">FLARE PATTERN</span>
+                    <span class="wk-link">Report <svg class="ic"><use href="#i-chevron"/></svg></span>
+                  </div>
+                  <div class="wk-strip">
+                    <div class="wk-col"><div class="wk-bar"></div><span class="wk-d">M</span></div>
+                    <div class="wk-col"><div class="wk-bar" style="height:15px;background:#8A6E2B"></div><span class="wk-d">T</span></div>
+                    <div class="wk-col"><div class="wk-bar" style="height:34px;background:#A34A24"></div><span class="wk-d">W</span></div>
+                    <div class="wk-col"><div class="wk-bar"></div><span class="wk-d">T</span></div>
+                    <div class="wk-col"><div class="wk-bar" style="height:22px;background:#A5661F"></div><span class="wk-d">F</span></div>
+                    <div class="wk-col"><div class="wk-bar"></div><span class="wk-d">S</span></div>
+                    <div class="wk-col today"><div class="wk-bar" style="height:18px;background:#A5661F"></div><span class="wk-d">S</span></div>
+                  </div>
+                  <div class="wk-foot">
+                    <b>5</b><span class="u">flares</span>
+                    <span class="sep"></span>
+                    <span class="m">Shoulder most frequent</span>
+                    <span class="delta">+1 vs last</span>
+                  </div>
+                </div>
+
+                <div class="p-sec">
+                  <span class="cap">RECENT</span>
+                  <span class="act">By area <svg class="ic"><use href="#i-down"/></svg></span>
+                </div>
+
+                <div class="p-list">
+                  <div class="p-row">
+                    <div class="p-ph"><div class="grad"></div></div>
+                    <div>
+                      <div class="p-name">Shoulder</div>
+                      <div class="p-meta">3:42 PM · a few minutes · Hospital reset</div>
+                      <div class="p-note">Slipped reaching for a box overhead.</div>
+                    </div>
+                    <span class="p-sev" style="background:#A34A24">SEVERE</span>
+                  </div>
+                  <div class="p-row">
+                    <div class="p-ph"><div class="draft"><svg class="ic"><use href="#i-camera"/></svg></div></div>
+                    <div>
+                      <div class="p-name">Knee</div>
+                      <div class="p-meta">Nov 23 · 1–2 hours · Self-repositioned</div>
+                      <div class="p-note">Draft — tap to finish the details.</div>
+                    </div>
+                    <span class="p-sev" style="background:#A34A24">SIGNIFICANT</span>
+                  </div>
+                  <div class="p-row">
+                    <div class="p-ph"><div class="grad c"></div></div>
+                    <div>
+                      <div class="p-name">Fingers</div>
+                      <div class="p-meta">Nov 22 · ~30 min · Went back on its own</div>
+                      <div class="p-note">Writing, no clear trigger.</div>
+                    </div>
+                    <span class="p-sev" style="background:#8A6E2B">MILD</span>
+                  </div>
+                  <div class="p-row">
+                    <div class="p-ph"><div class="grad b"></div></div>
+                    <div>
+                      <div class="p-name">Wrist</div>
+                      <div class="p-meta">Nov 21 · half a day · Self-repositioned</div>
+                      <div class="p-note">Phone use, thumb typing.</div>
+                    </div>
+                    <span class="p-sev" style="background:#A5661F">MODERATE</span>
+                  </div>
+                </div>
+
+                <div class="p-bottom">
+                  <div class="p-cta"><svg class="ic"><use href="#i-plus"/></svg>Log a flare</div>
+                </div>
+              </div>
+            </div></div></div>
+          </div>
+        </div>
+
+        <div class="findings">
+          <div class="find p0" data-f="D1">
+            <span class="idx">1</span><span class="pri">P0</span>
+            <h4>三个 64pt 圆按钮平分了注意力，还压住列表最后一行</h4>
+            <dl>
+              <dt>证据</dt><dd><code>ContentView.swift:41-87</code>，Quick Log 为 <code>#AF52DE</code>，＋ 与 More 同为 <code>rgb(140,115,191)</code>，全部 64×64</dd>
+              <dt>影响</dt><dd>「发作时一秒记下」是这个 App 唯一的核心动作，却和「More」同等视觉重量；<code>.overlay</code> 不参与 List 布局，最后一条记录会被圆按钮遮住</dd>
+              <dt>改法</dt><dd class="fix">底部收成一条 <code>Log a flare</code> 通栏主按钮（<code>safeAreaInset</code>），More 上移到导航栏；主按钮长按＝沿用上次部位直接落库＋撤销提示</dd>
+            </dl>
+          </div>
+          <div class="find p0" data-f="D5">
+            <span class="idx">5</span><span class="pri">P0</span>
+            <h4>首页只有流水账，价值最高的「模式」被锁在二级页</h4>
+            <dl>
+              <dt>证据</dt><dd>首页仅 <code>List</code>；统计逻辑写在 <code>DoctorReportView.swift:33-48</code></dd>
+              <dt>影响</dt><dd>用户每天打开看到的是四行流水，看不到「这周几次／最常哪个关节／比上周好没好」——而这正是他愿意每天打开的理由，也是给医生看的证据</dd>
+              <dt>改法</dt><dd class="fix">顶部加 7 日热力条＋本周计数＋最常见部位＋环比；数据层已有，只是换位置，不动模型</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 02 CAPTURE ============ -->
+      <div class="pair" data-s="capture" style="display:none">
+        <div class="devices">
+          <div class="phone-col">
+            <div class="ph-label"><b>现状</b><span>点击后无确认步骤</span></div>
+            <div class="slot"><div class="dev"><div class="scr ios">
+              <div class="notch"></div>
+              <div class="sb"><span>9:41</span><span class="right"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="bat"></span></span></div>
+              <div class="navbar" style="position:relative">
+                <svg class="ic"><use href="#i-info"/></svg>
+                <span class="nav-title">HyperLog</span>
+                <span class="nav-r"><svg class="ic"><use href="#i-grid"/></svg></span>
+              </div>
+              <div class="list">
+                <div class="row-c">
+                  <div class="thumb" style="background:none;padding:0"><div style="width:100%;height:100%;background:linear-gradient(150deg,#D3C4AE,#A28C6E)"></div></div>
+                  <div class="row-body">
+                    <div class="row-l1"><span class="part">Knee</span><span class="tag">To fill</span><span class="pill-sev sev2">Significant</span></div>
+                    <div class="row-meta"><span>pain: 1-2 hours</span><span>Self-repositioned</span></div>
+                    <div class="row-notes">After long sitting at the desk.</div>
+                    <div class="row-date">Nov 25, 9:41 AM</div>
+                  </div>
+                </div>
+                <div class="row-c">
+                  <div class="thumb"><svg class="ic"><use href="#i-camera"/></svg></div>
+                  <div class="row-body">
+                    <div class="row-l1"><span class="part">Knee</span><span class="tag">To fill</span><span class="pill-sev sev2">Significant</span></div>
+                    <div class="row-meta"><span>pain: 1-2 hours</span><span>Self-repositioned</span></div>
+                    <div class="row-date">Nov 23, 6:10 PM</div>
+                  </div>
+                </div>
+                <div class="row-c">
+                  <div class="thumb"><svg class="ic"><use href="#i-camera"/></svg></div>
+                  <div class="row-body">
+                    <div class="row-l1"><span class="part">Fingers</span><span class="pill-sev sev1">Mild</span></div>
+                    <div class="row-meta"><span>pain: ~30 minutes</span></div>
+                    <div class="row-date">Nov 22, 11:05 AM</div>
+                  </div>
+                </div>
+              </div>
+              <div class="fab fab-quick"><svg class="ic"><use href="#i-bolt"/></svg><span>Quick Log</span></div>
+              <div class="fab fab-plus"><svg class="ic" style="width:26px;height:26px"><use href="#i-plus"/></svg></div>
+              <div class="fab fab-more"><svg class="ic"><use href="#i-more"/></svg><span>More</span></div>
+              <div class="badge-n" data-f="D2" style="left:62px;top:734px">2</div>
+              <div class="audit" style="bottom:104px">
+                <b>点一下之后，实际写进 JSON 的是</b>
+                <code>bodyPart</code> = 上一条记录的部位（第一条时写死 <code>"knee"</code>）<br>
+                <code>severity</code> = <code>2</code>（Moderate，写死）<br>
+                用户看不到、也没法当场改。
+              </div>
+            </div></div></div>
+          </div>
+
+          <div class="phone-col">
+            <div class="ph-label"><b>建议稿</b><span>底部确认卡 · 2 次点击完成</span></div>
+            <div class="slot"><div class="dev"><div class="scr paper">
+              <div class="notch"></div>
+              <div class="sb"><span>9:41</span><span class="right"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="bat"></span></span></div>
+              <div class="px" style="filter:saturate(.8)">
+                <div class="p-top">
+                  <div>
+                    <div class="p-eyebrow">Nov 19 — Nov 25</div>
+                    <div class="p-h1">This week</div>
+                  </div>
+                  <div class="p-icobtn"><svg class="ic"><use href="#i-more"/></svg></div>
+                </div>
+                <div class="wk" style="opacity:.55">
+                  <div class="wk-head"><span class="cap">FLARE PATTERN</span><span class="wk-link">Report <svg class="ic"><use href="#i-chevron"/></svg></span></div>
+                  <div class="wk-strip">
+                    <div class="wk-col"><div class="wk-bar"></div><span class="wk-d">M</span></div>
+                    <div class="wk-col"><div class="wk-bar" style="height:15px;background:#8A6E2B"></div><span class="wk-d">T</span></div>
+                    <div class="wk-col"><div class="wk-bar" style="height:34px;background:#A34A24"></div><span class="wk-d">W</span></div>
+                    <div class="wk-col"><div class="wk-bar"></div><span class="wk-d">T</span></div>
+                    <div class="wk-col"><div class="wk-bar" style="height:22px;background:#A5661F"></div><span class="wk-d">F</span></div>
+                  </div>
+                </div>
+              </div>
+              <div class="dim"></div>
+              <div class="sheet">
+                <div class="grab"></div>
+                <h2>What just happened?</h2>
+                <div class="now"><svg class="ic"><use href="#i-clock"/></svg>Now · 3:42 PM</div>
+
+                <div class="flab">AREA</div>
+                <div class="chips">
+                  <div class="chip-p">Knee</div>
+                  <div class="chip-p on">Shoulder</div>
+                  <div class="chip-p">Fingers</div>
+                  <div class="chip-p">Hip</div>
+                  <div class="chip-p">Back</div>
+                  <div class="chip-p">Ankle</div>
+                  <div class="chip-p">Wrist</div>
+                  <div class="chip-p">Neck</div>
+                  <div class="chip-p">Jaw</div>
+                  <div class="chip-p">Other</div>
+                </div>
+
+                <div class="flab">HOW MUCH</div>
+                <div class="seg4">
+                  <div class="s1">Mild</div>
+                  <div class="s2">Moderate</div>
+                  <div class="s3 on s3">Significant</div>
+                  <div class="s4">Severe</div>
+                </div>
+                <div class="seg-hint">Severe = it slipped out or dislocated.</div>
+
+                <div class="flab">NOTE — OPTIONAL</div>
+                <div class="note-line">Reaching for a box overhead.</div>
+
+                <div class="sheet-btns">
+                  <div class="p-cta">Save</div>
+                  <div class="btn-ghost">Add details</div>
+                </div>
+              </div>
+            </div></div></div>
+          </div>
+        </div>
+
+        <div class="findings">
+          <div class="find p0" data-f="D2">
+            <span class="idx">2</span><span class="pri">P0</span>
+            <h4>一键快记会静默写入错误数据</h4>
+            <dl>
+              <dt>证据</dt><dd><code>ContentView.swift:111-119</code>：<code>bodyPart = entries.first?.bodyPart ?? "knee"</code>，<code>severity: 2</code> 硬编码</dd>
+              <dt>影响</dt><dd>用户以为记下了肩膀，实际记成了膝盖；补细节时原始真实情况已经丢了。这条路走得越顺，医生报告越不可信——这是产品的地基问题，不是小 bug</dd>
+              <dt>改法</dt><dd class="fix">点击后不下沉，直接弹半屏确认卡：部位九宫格（默认继承上一条但高亮可见）＋严重度四段＋可选备注，<code>Save</code> 两次点击完成；<code>Add details</code> 跳完整表单并预填</dd>
+            </dl>
+          </div>
+          <div class="find p0">
+            <span class="idx">3</span><span class="pri">P0</span>
+            <h4>部位选择 10 行、严重度文案 31 字符，都塞在同一个表单里</h4>
+            <dl>
+              <dt>证据</dt><dd><code>EntryEditor.swift:29-41</code> 用 <code>.pickerStyle(.inline)</code> 铺开 10 项；<code>:42-50</code> 四段控件含 <code>"Severe (subluxation/dislocation)"</code></dd>
+              <dt>影响</dt><dd>发作时单手要滚 4–5 屏才填完；长文案在 iPhone 分段控件里必然截断成省略号，最严重的档位反而最看不清</dd>
+              <dt>改法</dt><dd class="fix">部位改 5×2 chips；严重度用四段短标签（Mild / Moderate / Significant / Severe），把「subluxation/dislocation」降级为选中 Severe 后出现的说明行</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 03 EDITOR ============ -->
+      <div class="pair" data-s="editor" style="display:none">
+        <div class="devices">
+          <div class="phone-col">
+            <div class="ph-label"><b>现状</b><span>EntryEditor.swift · 8 段</span></div>
+            <div class="slot"><div class="dev"><div class="scr ios">
+              <div class="notch"></div>
+              <div class="sb"><span>9:41</span><span class="right"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="bat"></span></span></div>
+              <div class="navbar" style="position:relative;justify-content:space-between">
+                <span style="font-size:16px;color:#007AFF">Cancel</span>
+                <span class="nav-title">New entry</span>
+                <span style="font-size:16px;font-weight:600;color:#007AFF">Save</span>
+              </div>
+              <div style="flex:1;overflow:hidden;background:#F2F2F7;padding-top:14px">
+                <div style="font-size:11px;color:#8A8A8E;letter-spacing:.03em;padding:0 18px 6px;text-transform:uppercase">Which joint / area?</div>
+                <div style="background:#fff">
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 18px;font-size:16px;border-bottom:.5px solid #E4E4E8">Knee<svg style="width:16px;height:16px;color:#007AFF"><use href="#i-check"/></svg></div>
+                  <div style="padding:9px 18px;font-size:16px;border-bottom:.5px solid #E4E4E8">Shoulder</div>
+                  <div style="padding:9px 18px;font-size:16px;border-bottom:.5px solid #E4E4E8">Fingers</div>
+                  <div style="padding:9px 18px;font-size:16px;border-bottom:.5px solid #E4E4E8">Hip</div>
+                  <div style="padding:9px 18px;font-size:16px;border-bottom:.5px solid #E4E4E8">Back</div>
+                  <div style="padding:9px 18px;font-size:16px;border-bottom:.5px solid #E4E4E8">Ankle</div>
+                  <div style="padding:9px 18px;font-size:16px;border-bottom:.5px solid #E4E4E8">Wrist</div>
+                  <div style="padding:9px 18px;font-size:16px;border-bottom:.5px solid #E4E4E8">Neck</div>
+                  <div style="padding:9px 18px;font-size:16px;border-bottom:.5px solid #E4E4E8">Jaw</div>
+                  <div style="padding:9px 18px;font-size:16px">Other</div>
+                </div>
+                <div style="font-size:11px;color:#8A8A8E;letter-spacing:.03em;padding:20px 18px 6px;text-transform:uppercase">How significant?</div>
+                <div style="background:rgba(118,118,128,.12);border-radius:9px;margin:0 15px;padding:3px;display:grid;grid-template-columns:repeat(4,1fr);gap:2px">
+                  <div style="text-align:center;font-size:11.5px;padding:6px 2px;background:#fff;color:#000;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.14)">Mild</div>
+                  <div style="text-align:center;font-size:11.5px;padding:6px 2px;color:#000">Moderate</div>
+                  <div style="text-align:center;font-size:11.5px;padding:6px 2px;color:#000;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Signif…</div>
+                  <div style="text-align:center;font-size:11.5px;padding:6px 2px;color:#000;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Severe (s…</div>
+                </div>
+                <div style="font-size:11px;color:#8A8A8E;letter-spacing:.03em;padding:20px 18px 6px;text-transform:uppercase">How long did it hurt?</div>
+                <div style="background:#fff;display:flex;justify-content:space-between;padding:12px 18px;font-size:16px">A few minutes<span style="color:#8A8A8E;font-size:13px">Minutes</span></div>
+                <div style="font-size:11px;color:#8A8A8E;letter-spacing:.03em;padding:20px 18px 6px;text-transform:uppercase">What did you do about it?</div>
+                <div style="background:#fff">
+                  <div style="padding:10px 18px;font-size:16px;border-bottom:.5px solid #E4E4E8">Self-repositioned</div>
+                  <div style="padding:10px 18px;font-size:16px">Repositioned at hospital</div>
+                </div>
+              </div>
+              <div style="position:absolute;left:0;right:0;bottom:0;height:70px;background:linear-gradient(transparent,#fff)"></div>
+              <div class="badge-n" data-f="D4" style="left:344px;top:250px">4</div>
+              <div class="badge-n" data-f="D4" style="left:344px;top:640px">4</div>
+            </div></div></div>
+          </div>
+
+          <div class="phone-col">
+            <div class="ph-label"><b>建议稿</b><span>主体 1 屏，细节折叠</span></div>
+            <div class="slot"><div class="dev"><div class="scr paper">
+              <div class="notch"></div>
+              <div class="sb"><span>9:41</span><span class="right"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="bat"></span></span></div>
+              <div class="px">
+                <div class="f-top">
+                  <span class="x">Cancel</span>
+                  <span class="t">New entry</span>
+                  <span class="s">Save</span>
+                </div>
+                <div class="f-body">
+                  <div class="f-block">
+                    <div class="flab" style="margin-top:0">AREA</div>
+                    <div class="chips">
+                      <div class="chip-p">Knee</div>
+                      <div class="chip-p on">Shoulder</div>
+                      <div class="chip-p">Fingers</div>
+                      <div class="chip-p">Hip</div>
+                      <div class="chip-p">Back</div>
+                      <div class="chip-p">Ankle</div>
+                      <div class="chip-p">Wrist</div>
+                      <div class="chip-p">Neck</div>
+                      <div class="chip-p">Jaw</div>
+                      <div class="chip-p">Other</div>
+                    </div>
+                    <div class="flab">HOW MUCH</div>
+                    <div class="seg4">
+                      <div>Mild</div>
+                      <div>Moderate</div>
+                      <div class="on s3">Significant</div>
+                      <div>Severe</div>
+                    </div>
+                    <div class="seg-hint">Severe = it slipped out or dislocated.</div>
+                  </div>
+
+                  <div class="f-block">
+                    <div class="flab" style="margin-top:0">DETAILS — TAP TO FILL</div>
+                    <div class="f-row"><span class="l">Pain duration</span><span class="r"><span class="val">1–2 hours</span><svg class="ic"><use href="#i-chevron"/></svg></span></div>
+                    <div class="f-row"><span class="l">Treatment</span><span class="r"><span class="val">Self-repositioned</span><svg class="ic"><use href="#i-chevron"/></svg></span></div>
+                    <div class="f-row"><span class="l">Triggers</span><span class="r"><span class="val">Sitting, Sleep</span><svg class="ic"><use href="#i-chevron"/></svg></span></div>
+                    <div class="f-row"><span class="l">Notes</span><span class="r"><span class="val" style="color:var(--ink3)">Add</span><svg class="ic"><use href="#i-chevron"/></svg></span></div>
+                    <div class="f-row"><span class="l">Photos</span><span class="r"><span class="val">1 photo</span><svg class="ic"><use href="#i-chevron"/></svg></span></div>
+                  </div>
+
+                  <div class="f-block">
+                    <div class="f-row" style="padding:2px 0">
+                      <span class="l">Beighton self-check</span>
+                      <span class="r"><span class="val">5 / 9</span><svg class="ic"><use href="#i-chevron"/></svg></span>
+                    </div>
+                  </div>
+                </div>
+                <div class="p-bottom">
+                  <div class="p-cta"><svg class="ic"><use href="#i-check"/></svg>Save entry</div>
+                </div>
+              </div>
+            </div></div></div>
+          </div>
+        </div>
+
+        <div class="findings">
+          <div class="find p0" data-f="D4">
+            <span class="idx">4</span><span class="pri">P0</span>
+            <h4>八段表单 + 10 行内联选择器 = 一次记录要滚 4 到 5 屏</h4>
+            <dl>
+              <dt>证据</dt><dd><code>EntryEditor.swift</code> 全 261 行，8 个 Section；部位 <code>.inline</code> 占 10 行；Beighton 又是 9 个 Toggle</dd>
+              <dt>影响</dt><dd>目标用户在「疼、单手、脑子糊」的状态下操作。分段控件里 <code>Significant</code> 和 <code>Severe (subluxation…)</code> 都被截断成 <code>Signif…</code>／<code>Severe (s…</code>，最严重档位反而最不可读</dd>
+              <dt>改法</dt><dd class="fix">「主体必填」与「细节可选」分离：部位 chips + 严重度四段常驻，其余折叠成 5 行带当前值的入口（点击展开子页），Beighton 收成一行摘要。首屏可完成，深度不丢</dd>
+            </dl>
+          </div>
+          <div class="find p1">
+            <span class="idx">6</span><span class="pri">P1</span>
+            <h4>同一个产品里有三种紫，导航还是系统蓝</h4>
+            <dl>
+              <dt>证据</dt><dd><code>Color.purple</code>（#AF52DE）／<code>Color(0.55,0.45,0.75)</code> ×2／PDF 里 <code>UIColor(0.45,0.3,0.7)</code>；<code>ContentView</code> 未设 <code>.tint</code>，工具栏图标走默认 #007AFF</dd>
+              <dt>影响</dt><dd>深浅两套紫在同一屏出现，加上蓝色图标，品牌感被稀释；深色模式下 <code>opacity(0.12)</code> 底色会发脏；换色要改 4 处</dd>
+              <dt>改法</dt><dd class="fix">建 <code>DesignTokens.swift</code> 单一来源：paper / ink / accent 三组＋严重度四档，所有视图与 PDF 共用</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 04 REPORT ============ -->
+      <div class="pair" data-s="report" style="display:none">
+        <div class="devices">
+          <div class="phone-col">
+            <div class="ph-label"><b>现状</b><span>DoctorReportView.swift</span></div>
+            <div class="slot"><div class="dev"><div class="scr ios">
+              <div class="notch"></div>
+              <div class="sb"><span>9:41</span><span class="right"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="bat"></span></span></div>
+              <div class="navbar" style="position:relative">
+                <span class="nav-title" style="font-size:17px">Report Sharing</span>
+              </div>
+              <div class="list" style="padding-top:14px">
+                <div style="margin:0 15px;background:rgba(118,118,128,.12);border-radius:9px;padding:3px;display:grid;grid-template-columns:repeat(3,1fr);gap:2px">
+                  <div style="text-align:center;font-size:12.5px;padding:6px 0;color:#000">Last 7 days</div>
+                  <div style="text-align:center;font-size:12.5px;padding:6px 0;background:#fff;color:#000;font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.14);border-radius:7px">Last 30 days</div>
+                  <div style="text-align:center;font-size:12.5px;padding:6px 0;color:#000">All</div>
+                </div>
+                <div style="font-size:11px;color:#8A8A8E;letter-spacing:.03em;padding:22px 18px 6px;text-transform:uppercase">Preview (this is what the PDF contains)</div>
+                <div style="background:#fff">
+                  <div style="display:flex;justify-content:space-between;padding:9px 18px;font-size:14px;border-bottom:.5px solid #E4E4E8"><span style="color:#8A8A8E">Total episodes</span><b>38</b></div>
+                  <div style="display:flex;justify-content:space-between;padding:9px 18px;font-size:14px;border-bottom:.5px solid #E4E4E8"><span style="color:#8A8A8E">Areas involved</span><b>5</b></div>
+                  <div style="display:flex;justify-content:space-between;padding:9px 18px;font-size:14px;border-bottom:.5px solid #E4E4E8"><span style="color:#8A8A8E">Most frequent area</span><b>Shoulder — 14</b></div>
+                  <div style="display:flex;justify-content:space-between;padding:9px 18px;font-size:14px;border-bottom:.5px solid #E4E4E8"><span style="color:#8A8A8E">Severe episodes (subluxation/dislocation)</span><b>6</b></div>
+                  <div style="display:flex;justify-content:space-between;padding:9px 18px;font-size:14px;border-bottom:.5px solid #E4E4E8"><span style="color:#8A8A8E">Hospital repositioning</span><b>2</b></div>
+                  <div style="display:flex;justify-content:space-between;padding:9px 18px;font-size:14px;border-bottom:.5px solid #E4E4E8"><span style="color:#8A8A8E">Shoulder</span><span style="color:#AF52DE">14</span></div>
+                  <div style="display:flex;justify-content:space-between;padding:9px 18px;font-size:14px;border-bottom:.5px solid #E4E4E8"><span style="color:#8A8A8E">Knee</span><span style="color:#AF52DE">11</span></div>
+                  <div style="display:flex;justify-content:space-between;padding:9px 18px;font-size:14px;border-bottom:.5px solid #E4E4E8"><span style="color:#8A8A8E">Fingers</span><span style="color:#AF52DE">6</span></div>
+                  <div style="display:flex;justify-content:space-between;padding:9px 18px;font-size:14px;border-bottom:.5px solid #E4E4E8"><span style="color:#8A8A8E">Back</span><span style="color:#AF52DE">4</span></div>
+                  <div style="display:flex;justify-content:space-between;padding:9px 18px;font-size:14px"><span style="color:#8A8A8E">Wrist</span><span style="color:#AF52DE">3</span></div>
+                </div>
+                <div style="padding:20px 15px 0">
+                  <div style="background:#AF52DE;color:#fff;border-radius:9px;padding:13px;text-align:center;font-size:14px;font-weight:600">Email to doctor</div>
+                  <div style="border:1px solid #AF52DE;color:#AF52DE;border-radius:9px;padding:13px;text-align:center;font-size:14px;font-weight:600;margin-top:9px">Share other ways (Gmail/Outlook/Messages/Files)</div>
+                  <div style="font-size:11px;color:#8A8A8E;margin-top:10px;line-height:1.45">PDF includes: summary stats, per-joint bar chart, daily trend, latest Beighton score, and the full episode list (time / area / severity / pain duration / treatment / triggers / photos / notes).</div>
+                </div>
+              </div>
+              <div class="badge-n" data-f="D6" style="left:6px;top:512px">6</div>
+            </div></div></div>
+          </div>
+
+          <div class="phone-col">
+            <div class="ph-label"><b>建议稿</b><span>数字先行 · 一个主按钮</span></div>
+            <div class="slot"><div class="dev"><div class="scr paper">
+              <div class="notch"></div>
+              <div class="sb"><span>9:41</span><span class="right"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="bat"></span></span></div>
+              <div class="px">
+                <div class="p-top" style="padding-bottom:8px">
+                  <div>
+                    <div class="p-eyebrow">FOR YOUR DOCTOR</div>
+                    <div class="p-h1" style="font-size:28px">The last 30 days</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:6px;padding:0 18px 12px">
+                  <div class="chipx">7 days</div>
+                  <div class="chipx on">30 days</div>
+                  <div class="chipx">All</div>
+                </div>
+
+                <div class="r-big">
+                  <div class="cap">EPISODES RECORDED</div>
+                  <div class="r-num"><b>38</b><span>episodes</span><span class="d">+6 vs prev.</span></div>
+                  <div class="r-meta"><span><b>6</b> severe</span><span><b>2</b> hospital reset</span><span><b>5</b> areas</span></div>
+                </div>
+
+                <div class="r-bars">
+                  <div class="r-bar"><span class="nm">Shoulder</span><span class="tr"><i style="width:100%"></i></span><span class="cd">14</span></div>
+                  <div class="r-bar"><span class="nm">Knee</span><span class="tr"><i style="width:79%"></i></span><span class="cd">11</span></div>
+                  <div class="r-bar"><span class="nm">Fingers</span><span class="tr"><i style="width:43%"></i></span><span class="cd">6</span></div>
+                  <div class="r-bar"><span class="nm">Back</span><span class="tr"><i style="width:29%"></i></span><span class="cd">4</span></div>
+                  <div class="r-bar"><span class="nm">Wrist</span><span class="tr"><i style="width:21%"></i></span><span class="cd">3</span></div>
+                </div>
+
+                <div class="daystrip">
+                  <i style="height:6px"></i><i style="height:14px;background:#8A6E2B"></i><i style="height:6px"></i><i style="height:22px;background:#A5661F"></i><i style="height:6px"></i><i style="height:6px"></i><i style="height:30px;background:#A34A24"></i><i style="height:6px"></i><i style="height:10px;background:#8A6E2B"></i><i style="height:6px"></i><i style="height:18px;background:#A5661F"></i><i style="height:6px"></i><i style="height:6px"></i><i style="height:12px;background:#8A6E2B"></i><i style="height:6px"></i><i style="height:24px;background:#A34A24"></i><i style="height:6px"></i><i style="height:8px;background:#8A6E2B"></i><i style="height:6px"></i><i style="height:16px;background:#A5661F"></i><i style="height:6px"></i><i style="height:6px"></i><i style="height:6px"></i><i style="height:20px;background:#A34A24"></i><i style="height:6px"></i><i style="height:12px;background:#8A6E2B"></i><i style="height:6px"></i><i style="height:6px"></i><i style="height:16px;background:#A5661F"></i><i style="height:26px;background:#A34A24"></i>
+                </div>
+                <div style="padding:6px 18px 0;font-family:var(--mono);font-size:8.5px;color:var(--ink3);display:flex;justify-content:space-between"><span>OCT 27</span><span>NOV 25</span></div>
+
+                <div class="p-bottom" style="border-top:0;padding-top:14px">
+                  <div class="p-cta"><svg class="ic"><use href="#i-doc"/></svg>Send to doctor</div>
+                </div>
+                <div style="text-align:center;font-size:10px;color:var(--ink3);margin-top:-16px">Share PDF · What's included</div>
+              </div>
+            </div></div></div>
+          </div>
+        </div>
+
+        <div class="findings">
+          <div class="find p1" data-f="D6">
+            <span class="idx">6</span><span class="pri">P1</span>
+            <h4>报告页是「五行统计 + 两行同义按钮 + 三行说明」</h4>
+            <dl>
+              <dt>证据</dt><dd><code>DoctorReportView.swift:32-84</code>：5 行 statRow、两个都产出同一份 PDF 的大按钮、<code>:81-83</code> 三行 caption；数字用 <code>.purple</code> 无对比含义</dd>
+              <dt>影响</dt><dd>这页是产品最值钱的一屏（给医生看的证据），却最像后台管理界面：没有主视觉数字，条形图只存在 PDF 里，按钮语义重复让用户犹豫点哪个</dd>
+              <dt>改法</dt><dd class="fix">大号衬线数字＋环比、部位横条直接画在页面上、30 日热度条；主按钮收成一个 <code>Send to doctor</code>，另一个降为文字链；说明收进 <code>What's included</code> 折叠</dd>
+            </dl>
+          </div>
+          <div class="find p2">
+            <span class="idx">7</span><span class="pri">P2</span>
+            <h4>严重度文案混进统计标签，句式不统一</h4>
+            <dl>
+              <dt>证据</dt><dd>同一页出现 <code>Severe episodes (subluxation/dislocation)</code>、<code>Hospital repositioning</code>、<code>Areas involved</code> 三种句式</dd>
+              <dt>影响</dt><dd>长标签在小屏挤压右侧数字，扫读顺序被打断；医生侧读起来像表单而非摘要</dd>
+              <dt>改法</dt><dd class="fix">标签统一为名词短语（Severe / Hospital reset / Areas），括号说明移到 footnote</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 05 COMPARE ============ -->
+      <div class="pair" data-s="compare" style="display:none">
+        <div class="devices">
+          <div class="phone-col">
+            <div class="ph-label"><b>现状</b><span>PhotoCompareView.swift</span></div>
+            <div class="slot"><div class="dev"><div class="scr ios">
+              <div class="notch"></div>
+              <div class="sb"><span>9:41</span><span class="right"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="bat"></span></span></div>
+              <div class="navbar" style="position:relative"><span class="nav-title">Photo Compare</span></div>
+              <div class="list" style="padding-top:14px">
+                <div style="margin:0 15px;background:#fff;border-radius:9px;padding:3px;display:grid;grid-template-columns:repeat(3,1fr);gap:2px">
+                  <div style="text-align:center;font-size:12.5px;padding:6px 0;font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.16);border-radius:7px">Knee</div>
+                  <div style="text-align:center;font-size:12.5px;padding:6px 0">Shoulder</div>
+                  <div style="text-align:center;font-size:12.5px;padding:6px 0">Wrist</div>
+                </div>
+                <div style="font-size:11px;color:#8A8A8E;letter-spacing:.03em;padding:22px 18px 6px;text-transform:uppercase">Chronological (oldest first)</div>
+                <div style="background:#fff;padding:8px 0">
+                  <div style="padding:6px 16px 10px">
+                    <div style="height:240px;border-radius:10px;background:linear-gradient(160deg,#DCD0BB,#BFAC8E 55%,#9C8A70)"></div>
+                    <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+                      <span style="font-size:11px;font-weight:700">Nov 21, 2026</span>
+                      <span style="font-size:10px;color:#C86A00">Significant</span>
+                      <span style="font-size:10px;margin-left:auto;color:#8A8A8E">2 photos</span>
+                    </div>
+                  </div>
+                  <div style="border-top:.5px solid #E9E9ED;padding:10px 16px">
+                    <div style="height:120px;border-radius:10px;background:linear-gradient(160deg,#CBBCA6,#A99B85 55%,#8A7B65)"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="badge-n" data-f="D7" style="left:330px;top:330px">3</div>
+            </div></div></div>
+          </div>
+
+          <div class="phone-col">
+            <div class="ph-label"><b>建议稿</b><span>真正并排 · A/B 配对</span></div>
+            <div class="slot"><div class="dev"><div class="scr paper">
+              <div class="notch"></div>
+              <div class="sb"><span>9:41</span><span class="right"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="bat"></span></span></div>
+              <div class="px">
+                <div class="p-top" style="padding-bottom:10px">
+                  <div>
+                    <div class="p-eyebrow">CHANGE OVER TIME</div>
+                    <div class="p-h1" style="font-size:28px">Photo compare</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:6px;padding:0 18px 14px">
+                  <div class="chipx on">Knee</div>
+                  <div class="chipx">Shoulder</div>
+                  <div class="chipx">Wrist</div>
+                </div>
+
+                <div class="cmp-pair">
+                  <div class="cmp-cell"><div class="grad"></div><span class="tag">THEN</span><span class="date">Nov 12</span></div>
+                  <div class="cmp-cell b"><div class="grad"></div><span class="tag">NOW</span><span class="date">Nov 24</span></div>
+                </div>
+                <div class="cmp-mid">12 DAYS APART · TAP EITHER TO SWAP</div>
+
+                <div class="p-sec" style="padding:20px 22px 8px"><span class="cap">ALL PHOTOS · KNEE</span></div>
+                <div class="film">
+                  <div><span class="sd" style="background:#8A6E2B"></span></div>
+                  <div><span class="sd" style="background:#A5661F"></span></div>
+                  <div class="on"><span class="sd" style="background:#A34A24"></span></div>
+                  <div><span class="sd" style="background:#A5661F"></span></div>
+                  <div><span class="sd" style="background:#8A6E2B"></span></div>
+                </div>
+                <div style="padding:12px 18px 0;font-size:10.5px;color:var(--ink2);line-height:1.5">
+                  Swelling on Nov 24 is reduced compared with Nov 12 — same leg, same distance.
+                </div>
+                <div class="p-bottom" style="border-top:0;margin-top:auto">
+                  <div class="p-cta" style="background:transparent;border:1.4px solid var(--hair2);color:var(--primary)"><svg class="ic"><use href="#i-photo"/></svg>Add today's photo</div>
+                </div>
+              </div>
+            </div></div></div>
+          </div>
+        </div>
+
+        <div class="findings">
+          <div class="find p1" data-f="D7">
+            <span class="idx">3</span><span class="pri">P1</span>
+            <h4>叫「对比」，但实际是单列大图往下堆</h4>
+            <dl>
+              <dt>证据</dt><dd><code>PhotoCompareView.swift:31-63</code>：<code>ScrollView(.vertical)</code> 单列，图高写死 <code>240</code>，日期在下</dd>
+              <dt>影响</dt><dd>要判断「肿有没有消」必须来回滚动记忆比对，一屏只能看到一张半；这正是 EDS 用户最需要的能力（肿胀/淤青变化肉眼可见）</dd>
+              <dt>改法</dt><dd class="fix">改成 A/B 两张固定并排（THEN / NOW），点任一张从下方胶片条换图，中间标出相隔天数；下方保留全量网格</dd>
+            </dl>
+          </div>
+          <div class="find p2">
+            <span class="idx">8</span><span class="pri">P2</span>
+            <h4>部位分段控件用固定 key 列表，部位一多就挤爆</h4>
+            <dl>
+              <dt>证据</dt><dd><code>:12-15</code> <code>partsWithPhotos</code> 过滤后直接塞进 <code>.segmented</code></dd>
+              <dt>影响</dt><dd>5 个以上部位时文字压缩到不可读；<code>other:rib</code> 这类自定义部位名长短不一，更容易崩</dd>
+              <dt>改法</dt><dd class="fix">换横向可滚 chips，只显示有照片的部位</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 06 EMPTY ============ -->
+      <div class="pair" data-s="empty" style="display:none">
+        <div class="devices">
+          <div class="phone-col">
+            <div class="ph-label"><b>现状</b><span>ContentView.swift:131-146</span></div>
+            <div class="slot"><div class="dev"><div class="scr ios">
+              <div class="notch"></div>
+              <div class="sb"><span>9:41</span><span class="right"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="bat"></span></span></div>
+              <div class="navbar" style="position:relative">
+                <svg class="ic"><use href="#i-info"/></svg>
+                <span class="nav-title">HyperLog</span>
+                <span class="nav-r"><svg class="ic"><use href="#i-grid"/></svg></span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 32px;text-align:center;gap:14px">
+                <svg style="width:52px;height:52px;color:#AF52DE"><use href="#i-layers"/></svg>
+                <div style="font-size:17px;font-weight:600">Track your joints</div>
+                <div style="font-size:13px;color:#8A8A8E;line-height:1.5">Tap Quick Log (bottom left) during a flare — fill in details later. Use ＋ for full entries.</div>
+              </div>
+              <div class="fab fab-quick"><svg class="ic"><use href="#i-bolt"/></svg><span>Quick Log</span></div>
+              <div class="fab fab-plus"><svg class="ic" style="width:26px;height:26px"><use href="#i-plus"/></svg></div>
+              <div class="fab fab-more"><svg class="ic"><use href="#i-more"/></svg><span>More</span></div>
+              <div class="badge-n" data-f="D8" style="left:330px;top:400px">7</div>
+            </div></div></div>
+          </div>
+
+          <div class="phone-col">
+            <div class="ph-label"><b>建议稿</b><span>信任先行 + 一个动作</span></div>
+            <div class="slot"><div class="dev"><div class="scr paper">
+              <div class="notch"></div>
+              <div class="sb"><span>9:41</span><span class="right"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="bat"></span></span></div>
+              <div class="px">
+                <div class="p-top">
+                  <div>
+                    <div class="p-eyebrow">WED, NOV 25</div>
+                    <div class="p-h1" style="font-size:23px">HyperLog</div>
+                  </div>
+                  <div class="p-icobtn"><svg class="ic"><use href="#i-more"/></svg></div>
+                </div>
+                <div class="p-empty">
+                  <div class="em-h">Your joints,<br>on the record.</div>
+                  <div class="em-p">Log a flare in two taps today — the pattern it draws is what convinces a doctor tomorrow.</div>
+                  <div class="em-lock"><svg class="ic"><use href="#i-lock"/></svg>No account. Photos and notes never leave this phone.</div>
+                  <div class="p-cta" style="height:52px;flex:none"><svg class="ic"><use href="#i-plus"/></svg>Log your first flare</div>
+                </div>
+                <div class="p-bottom" style="border-top:1px solid var(--hair2)">
+                  <div style="flex:1;display:flex;gap:14px;justify-content:center;font-size:11px;color:var(--ink2);padding:6px 0">
+                    <span>Beighton check</span><span style="color:var(--hair2)">|</span><span>About &amp; privacy</span>
+                  </div>
+                </div>
+              </div>
+            </div></div></div>
+          </div>
+        </div>
+
+        <div class="findings">
+          <div class="find p2" data-f="D8">
+            <span class="idx">7</span><span class="pri">P2</span>
+            <h4>空状态是一份操作说明书，没有建立信任</h4>
+            <dl>
+              <dt>证据</dt><dd><code>ContentView.swift:137-143</code>：标题 <code>Track your joints</code>，正文两句话都在讲「点左下角、＋ 在哪」</dd>
+              <dt>影响</dt><dd>新用户第一次打开看到的是空白 + 指路文字，而且没有按钮（只能靠读文字找圆按钮）。「数据只在本机」这条最强的信任状，被埋在 About 里</dd>
+              <dt>改法</dt><dd class="fix">一句共情主张 + 一条本地隐私保证 + 一个主按钮（<code>Log your first flare</code>），把教学文案降到辅助位置</dd>
+            </dl>
+          </div>
+          <div class="find p1">
+            <span class="idx">9</span><span class="pri">P1</span>
+            <h4>固定尺寸与 11pt 小字，大字号下会挤坏</h4>
+            <dl>
+              <dt>证据</dt><dd><code>EntryRow</code> 的 <code>.frame(width:52,height:52)</code>、<code>.font(.caption2)</code>（11pt）、FAB 内两行 9pt 文字；行内信息未合并 VoiceOver 标签</dd>
+              <dt>影响</dt><dd>Dynamic Type 调到 135% 以上时，胶囊和被写死的方形缩略图会互压；VoiceOver 会把一行记录读成 6 段碎片</dd>
+              <dt>改法</dt><dd class="fix"><code>@ScaledMetric</code> 驱动缩略图与按钮尺寸；次要信息靠颜色+字重双编码而非只靠小字；整行加 <code>.accessibilityElement(children:.combine)</code> 与一句朗读摘要</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== 02 DESIGN SYSTEM ===== -->
+  <section class="sec" id="ds">
+    <div class="sec-head">
+      <span class="sec-num">02</span>
+      <h2>设计系统</h2>
+      <p>定这套的目的很实际：现在颜色散在 4 个文件里、字体全靠系统默认，改一次要翻五处。</p>
+    </div>
+
+    <div class="ds-grid">
+      <div class="card">
+        <h3>颜色：把「交通灯」换成「热力梯度」</h3>
+        <div class="sub">CONTRAST CHECKED AGAINST WCAG AA · ON #FFFDF8</div>
+
+        <div class="sw">
+          <div class="chip-c" style="background:#F6F3EC"></div>
+          <div><div class="nm">Paper</div><div class="hx">#F6F3EC</div></div>
+          <div class="ct">底色<br>ink 14.8:1</div>
+        </div>
+        <div class="sw">
+          <div class="chip-c" style="background:#1B1A17"></div>
+          <div><div class="nm">Ink</div><div class="hx">#1B1A17</div></div>
+          <div class="ct">正文<br>AA 通过</div>
+        </div>
+        <div class="sw">
+          <div class="chip-c" style="background:#22344D"></div>
+          <div><div class="nm">Accent / Ink Navy</div><div class="hx">#22344D</div></div>
+          <div class="ct">白字 10.9:1<br>AA 通过</div>
+        </div>
+
+        <div style="margin-top:18px;font-size:11px;color:var(--ink3);font-family:var(--mono);letter-spacing:.1em">SEVERITY RAMP</div>
+        <div class="ramp">
+          <div style="background:#8A6E2B">MILD 5.1:1</div>
+          <div style="background:#A5661F">MOD 4.6:1</div>
+          <div style="background:#A34A24">SIG 5.9:1</div>
+          <div style="background:#7C2D1C">SEV 8.4:1</div>
+        </div>
+        <p style="font-size:12px;color:var(--ink2);line-height:1.6">
+          单一色相从琥珀走到铁锈，深浅本身就是严重度，不需要记「绿黄橙红」的语义。
+          四档白字全部过 AA；<b style="color:var(--rust)">现状的 yellow(#FFCC00) 在白底只有 1.5:1</b>，是这套里最硬的缺陷。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>字体：衬线做标题，系统字做界面</h3>
+        <div class="sub">NO FONT FILES NEEDED · SF SERIF / NEW YORK IS BUILT INTO IOS</div>
+
+        <div class="type-row">
+          <span class="lbl">Display</span>
+          <span class="serif-sample" style="font-size:30px;line-height:1.1">This week</span>
+          <span class="spec">serif 31 / 600</span>
+        </div>
+        <div class="type-row">
+          <span class="lbl">Title</span>
+          <span class="serif-sample" style="font-size:21px">Shoulder</span>
+          <span class="spec">serif 17-21 / 600</span>
+        </div>
+        <div class="type-row">
+          <span class="lbl">Body</span>
+          <span style="font-size:14px">Slipped reaching for a box overhead.</span>
+          <span class="spec">SF 14 / 400</span>
+        </div>
+        <div class="type-row">
+          <span class="lbl">Meta</span>
+          <span style="font-size:11.5px;color:var(--ink2)">3:42 PM · a few minutes</span>
+          <span class="spec">SF 11.5 / 500</span>
+        </div>
+        <div class="type-row">
+          <span class="lbl">Label</span>
+          <span style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ink3)">FLARE PATTERN</span>
+          <span class="spec">mono 10 / .14em</span>
+        </div>
+
+        <p class="hand-note">
+          衬线不是装饰。这个 App 的差异点是「一份医生愿意看的记录」，衬线 + 数字排版直接指向「病历/期刊」的可信感，
+          而现在的紫色渐变 + 圆按钮把它拉回了泛健康 App。
+          <br><b>零成本实现：</b><code style="font-family:var(--mono);font-size:11px;background:#EFEBDF;padding:1px 4px;border-radius:3px">Font.system(size:31, weight:.semibold, design:.serif)</code>，iOS 16 起自带 New York。
+        </p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:18px">
+      <h3>组件</h3>
+      <div class="sub">SIZE / STATE / 用途</div>
+      <div class="comp-row" style="margin-top:6px">
+        <span class="btn-p"><svg class="ic"><use href="#i-plus"/></svg>Log a flare</span>
+        <span class="btn-s">Add details</span>
+        <span class="chipx on">Knee</span>
+        <span class="chipx">Shoulder</span>
+        <span class="chipx">Wrist</span>
+        <span class="pillx" style="background:#8A6E2B">MILD</span>
+        <span class="pillx" style="background:#A5661F">MODERATE</span>
+        <span class="pillx" style="background:#A34A24">SIGNIFICANT</span>
+        <span class="pillx" style="background:#7C2D1C">SEVERE</span>
+      </div>
+      <table class="spec">
+        <thead><tr><th style="width:150px">组件</th><th>规格</th><th style="width:34%">规则</th></tr></thead>
+        <tbody>
+          <tr><td>主按钮</td><td>高 50，圆角 13，<code>--primary</code>，字 14.5/600</td><td>一屏最多一个；固定在 <code>safeAreaInset</code>，不遮挡内容</td></tr>
+          <tr><td>次按钮</td><td>描边 1.4，同高同圆角</td><td>与主按钮并排时宽度不超过主按钮一半</td></tr>
+          <tr><td>Chip</td><td>高 34，圆角 8，选中填充 navy</td><td>选中态必须有色彩差，不只靠边框</td></tr>
+          <tr><td>严重度 Pill</td><td>高 17，字号 8.5/800，字距 .09em</td><td>只用四档色；文字全大写，避免长文案</td></tr>
+          <tr><td>Entry row</td><td>缩略图 50，gap 11，行高 ≥72</td><td>一行只放一层次要信息，超出进详情</td></tr>
+          <tr><td>Section label</td><td>mono 9.5，字距 .14em，<code>--ink3</code></td><td>全大写；同一屏不超过 3 个</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== 03 ROADMAP ===== -->
+  <section class="sec" id="road">
+    <div class="sec-head">
+      <span class="sec-num">03</span>
+      <h2>落地路线</h2>
+      <p>按「影响核心路径的程度」排，不是按好看程度。P0 三项都能在不动数据模型的前提下完成。</p>
+    </div>
+
+    <div class="road">
+      <div class="col-p p0">
+        <div class="ph"><b>P0</b><span>本次迭代 / 影响地基</span></div>
+        <ul>
+          <li><b>修一键快记的数据正确性</b><em>ContentView.quickLog() · 新增半屏确认卡</em></li>
+          <li><b>底部收成一个主按钮</b><em>safeAreaInset 替代三个 .overlay 圆按钮</em></li>
+          <li><b>严重度换热力梯度</b><em>4 档 token + 短标签，替换 traffic light</em></li>
+          <li><b>表单首屏化</b><em>部位 chips + 细节折叠，替代 10 行 inline picker</em></li>
+        </ul>
+      </div>
+      <div class="col-p">
+        <div class="ph"><b>P1</b><span>下一次迭代 / 建立记忆点</span></div>
+        <ul>
+          <li><b>首页加本周概览</b><em>7 日热度条 + 最常见部位 + 环比</em></li>
+          <li><b>抽 DesignTokens.swift</b><em>颜色/字号/间距单一来源，PDF 同源</em></li>
+          <li><b>报告页重排</b><em>大号数字 + 页内条形图 + 单主按钮</em></li>
+          <li><b>照片对比改 A/B 并排</b><em>THEN / NOW + 胶片条换图</em></li>
+          <li><b>动态字体与 VoiceOver</b><em>@ScaledMetric + 整行合并朗读</em></li>
+        </ul>
+      </div>
+      <div class="col-p">
+        <div class="ph"><b>P2</b><span>打磨 / 有余力再做</span></div>
+        <ul>
+          <li><b>空状态改写</b><em>共情主张 + 隐私保证 + 主 CTA</em></li>
+          <li><b>自定义部位选择器</b><em>other:xxx 用 chips 承载</em></li>
+          <li><b>深色模式校色</b><em>paper/ink 需反向 token，不能只靠 opacity</em></li>
+          <li><b>导语本地化</b><em>注释写着「测试期中文版」，UI 仍全英文</em></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 04 HANDOFF ===== -->
+  <section class="sec" id="hand">
+    <div class="sec-head">
+      <span class="sec-num">04</span>
+      <h2>交接要点</h2>
+      <p>只列会被直接抄进代码的部分；都是 SwiftUI 原生能力，不引依赖。</p>
+    </div>
+
+    <div class="hand-grid">
+      <div>
+        <h3 style="font-family:var(--serif);font-size:19px;margin-bottom:12px">1. Token 单一来源</h3>
+        <div class="code"><span class="c">// DesignTokens.swift</span>
+<span class="k">enum</span> <span class="t">Theme</span> {
+  <span class="k">static let</span> paper  = <span class="t">Color</span>(hex: <span class="s">0xF6F3EC</span>)
+  <span class="k">static let</span> ink    = <span class="t">Color</span>(hex: <span class="s">0x1B1A17</span>)
+  <span class="k">static let</span> ink2   = <span class="t">Color</span>(hex: <span class="s">0x5F5C53</span>)
+  <span class="k">static let</span> accent = <span class="t">Color</span>(hex: <span class="s">0x22344D</span>)
+
+  <span class="c">// 严重度：单一色相梯度，替换 green/yellow/orange/red</span>
+  <span class="k">static let</span> sev: [<span class="t">Color</span>] = [
+    <span class="t">Color</span>(hex: <span class="s">0x8A6E2B</span>), <span class="c">// Mild</span>
+    <span class="t">Color</span>(hex: <span class="s">0xA5661F</span>), <span class="c">// Moderate</span>
+    <span class="t">Color</span>(hex: <span class="s">0xA34A24</span>), <span class="c">// Significant</span>
+    <span class="t">Color</span>(hex: <span class="s">0x7C2D1C</span>)  <span class="c">// Severe</span>
+  ]
+}</div>
+        <p class="hand-note">替换点：<code style="font-family:var(--mono);font-size:11px">ContentView.severityColor</code>、两处 <code style="font-family:var(--mono);font-size:11px">Color(red:0.55…)</code>、<code style="font-family:var(--mono);font-size:11px">DoctorReportView</code> 里的 PDF purple。</p>
+      </div>
+
+      <div>
+        <h3 style="font-family:var(--serif);font-size:19px;margin-bottom:12px">2. 底部主按钮不遮内容</h3>
+        <div class="code"><span class="c">// 替换三个 .overlay(alignment:)</span>
+<span class="t">List</span> { <span class="c">…</span> }
+  .<span class="t">safeAreaInset</span>(edge: .bottom) {
+    <span class="t">LogBar</span>()          <span class="c">// 50pt 主按钮</span>
+  }
+
+<span class="c">// 长按 = 沿用上次部位直接落库 + 可撤销</span>
+.<span class="t">onLongPressGesture</span> { quickLogWithUndo() }</div>
+        <p class="hand-note"><b>为什么不是 overlay：</b>overlay 不参与布局，列表最后一行会被永久遮住（现状就是这个行为）。</p>
+      </div>
+
+      <div>
+        <h3 style="font-family:var(--serif);font-size:19px;margin-bottom:12px">3. 严重度控件换掉 segmented</h3>
+        <div class="code"><span class="c">// 四段短标签 + 动态说明，替代被截断的长文案</span>
+<span class="t">HStack</span>(spacing: 0) {
+  <span class="t">ForEach</span>(<span class="s">0</span>..&lt;<span class="s">4</span>, id: \.<span class="k">self</span>) { i <span class="k">in</span>
+    <span class="t">Text</span>(short[i])
+      .<span class="t">frame</span>(maxWidth: .infinity, minHeight: <span class="s">44</span>)
+      .<span class="t">background</span>(severity == i ? <span class="t">Theme</span>.sev[i] : .clear)
+      .<span class="t">foregroundColor</span>(severity == i ? .white : <span class="t">Theme</span>.ink2)
+      .<span class="t">onTapGesture</span> { severity = i }
+  }
+}
+<span class="t">Text</span>(<span class="s">"Severe = it slipped out or dislocated."</span>)
+  .<span class="t">opacity</span>(severity == <span class="s">3</span> ? <span class="s">1</span> : <span class="s">0</span>)</div>
+        <p class="hand-note">顺手解决了 <code style="font-family:var(--mono);font-size:11px">"Severe (subluxation/dislocation)"</code> 在分段控件里被吃掉的问题。</p>
+      </div>
+
+      <div>
+        <h3 style="font-family:var(--serif);font-size:19px;margin-bottom:12px">4. 大字号与朗读</h3>
+        <div class="code"><span class="c">// 固定 52pt 缩略图改随字号缩放</span>
+<span class="k">@ScaledMetric</span>(relativeTo: .body) <span class="k">var</span> thumb: <span class="t">CGFloat</span> = <span class="s">50</span>
+
+<span class="c">// 整行合成一句，而不是 6 段碎片</span>
+.<span class="t">accessibilityElement</span>(children: .combine)
+.<span class="t">accessibilityLabel</span>(
+  <span class="s">"\(part), \(severityLabel), \(dateText)"</span>)</div>
+        <p class="hand-note"><b>验证：</b>把 Dynamic Type 调到 135% 与 200% 各看一遍首页与表单，胶囊不换行、缩略图不压字即可。</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>HyperLog · UI 评审 v1 · 基线 commit：hypermobility-ios @ 2026-11-24</span>
+    <span>评审：像素君 / 依据 WCAG 2.2 AA · Apple HIG · 源码 11 个 Swift 文件 1259 行</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var tabs = document.querySelectorAll('.tab');
+  var pairs = document.querySelectorAll('.pair');
+  var ORDER = ['home','capture','editor','report','compare','empty'];
+
+  function show(key){
+    tabs.forEach(function(t){ t.setAttribute('aria-selected', t.dataset.s === key ? 'true' : 'false'); });
+    pairs.forEach(function(p){ p.style.display = (p.dataset.s === key) ? '' : 'none'; });
+    // 重播右侧动画：给当前 pair 加一个极轻的淡入
+    var cur = document.querySelector('.pair[data-s="'+key+'"]');
+    if(cur){
+      cur.animate(
+        [{opacity:0, transform:'translateY(6px)'},{opacity:1, transform:'none'}],
+        {duration:260, easing:'cubic-bezier(.16,1,.3,1)'}
+      );
+    }
+  }
+
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){ show(t.dataset.s); });
+  });
+
+  // 点问题卡 → 闪烁手机上的编号标记
+  document.querySelectorAll('.find').forEach(function(card){
+    card.addEventListener('click', function(){
+      var id = card.dataset.f;
+      if(!id) return;
+      document.querySelectorAll('.badge-n[data-f="'+id+'"]').forEach(function(b){
+        b.classList.remove('pulse');
+        void b.offsetWidth;
+        b.classList.add('pulse');
+      });
+      document.querySelectorAll('.find').forEach(function(c){ c.classList.remove('hl'); });
+      card.classList.add('hl');
+      setTimeout(function(){ card.classList.remove('hl'); }, 1600);
+    });
+  });
+
+  // 深链：#editor 直达某一屏（也方便截图核对）
+  function fromHash(){
+    var h = (location.hash || '').replace('#','');
+    if(ORDER.indexOf(h) > -1){
+      show(h);
+      var st = document.getElementById('stage');
+      if(st) st.scrollIntoView({block:'start'});
+    }
+  }
+  fromHash();
+  window.addEventListener('hashchange', fromHash);
+
+  // 键盘左右切换
+  document.addEventListener('keydown', function(e){
+    if(e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    var cur = document.querySelector('.tab[aria-selected="true"]').dataset.s;
+    var i = ORDER.indexOf(cur);
+    var n = e.key === 'ArrowRight' ? i+1 : i-1;
+    if(n < 0) n = ORDER.length-1;
+    if(n >= ORDER.length) n = 0;
+    show(ORDER[n]);
+  });
+})();
+</script>
+</body>
+</html>

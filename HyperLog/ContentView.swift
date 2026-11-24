@@ -1,265 +1,505 @@
 import SwiftUI
 import PhotosUI
 
-// MARK: - 主页：左下Quick Log / 中间＋详细记录 / 右下工具（Report Sharing+Photo Compare）
-// 布局（健哥 11-04 拍板）：＋只管详细记录；自评并入详细记录底部；其余功能右下角
+// MARK: - 主页
+// 结构（对照 docs/UI评审-HyperLog-2026-11-25.html）：
+// 本周概览 → 记录列表 → 底部单一主行动。
+// 旧版三个 64pt 圆按钮（Quick Log / ＋ / More）平分注意力，且 overlay 不参与 List 布局会压住末行；
+// 现在收成一条 safeAreaInset 主按钮，More 上移到导航栏。
+
 struct ContentView: View {
+
     @State private var entries: [JointEntry] = EntryStore.load()
     @State private var grouping = false
     @State private var editingEntry: JointEntry?
     @State private var showEditor = false
+    @State private var showCapture = false
+    @State private var pendingDetails: JointEntry?
     @State private var goReport = false
     @State private var goPhotos = false
     @State private var goFeedback = false
 
     var body: some View {
         NavigationStack {
-            Group {
+            ZStack {
+                Theme.paper.ignoresSafeArea()
                 if entries.isEmpty {
-                    emptyView
-                } else if grouping {
-                    groupedList
+                    emptyState
                 } else {
-                    timelineList
+                    entryList
                 }
             }
-            .navigationTitle("HyperLog")
+            .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Theme.paper, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    NavigationLink { AboutView() } label: { Image(systemName: "info.circle") }
+                    NavigationLink { AboutView() } label: {
+                        Image(systemName: "info.circle")
+                    }
+                    .tint(Theme.accent)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        grouping.toggle()
+                    Menu {
+                        Button { goReport = true } label: {
+                            Label("Report sharing", systemImage: "square.and.arrow.up")
+                        }
+                        Button { goPhotos = true } label: {
+                            Label("Photo compare", systemImage: "photo.on.rectangle.angled")
+                        }
+                        Divider()
+                        Button { goFeedback = true } label: {
+                            Label("Feedback", systemImage: "paperplane")
+                        }
                     } label: {
-                        Image(systemName: grouping ? "list.bullet" : "square.grid.2x2")
+                        Image(systemName: "ellipsis.circle")
                     }
+                    .tint(Theme.accent)
                 }
             }
-            // 左下：Quick Log
-            .overlay(alignment: .bottomLeading) {
-                Button {
-                    quickLog()
-                } label: {
-                    VStack(spacing: 2) {
-                        Image(systemName: "bolt.fill").font(.title3.bold())
-                        Text("Quick Log").font(.caption2.bold())
-                    }
-                    .foregroundColor(.white)
-                    .frame(width: 64, height: 64)
-                    .background(Circle().fill(Color.purple))
-                }
-                .padding(.leading, 16)
-                .padding(.bottom, 16)
-            }
-            // 中间：＋ 详细记录（新建——editingEntry 必须清空，此前残留=bug"只改旧记录"）
-            .overlay(alignment: .bottom) {
-                Button {
-                    editingEntry = nil
-                    showEditor = true
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.title2.bold())
-                        .foregroundColor(.white)
-                        .frame(width: 64, height: 64)
-                        .background(Circle().fill(Color(red: 0.55, green: 0.45, blue: 0.75)))
-                }
-                .padding(.bottom, 10)
-            }
-            // 右下：三合一工具（健哥 11-04 令：对比/分享/反馈合一个图标展开）
-            .overlay(alignment: .bottomTrailing) {
-                Menu {
-                    Button { goReport = true } label: { Label("Report Sharing", systemImage: "square.and.arrow.up") }
-                    Button { goPhotos = true } label: { Label("Photo Compare", systemImage: "photo.on.rectangle.angled") }
-                    Button { goFeedback = true } label: { Label("Feedback", systemImage: "paperplane") }
-                } label: {
-                    VStack(spacing: 2) {
-                        Image(systemName: "ellipsis").font(.title3)
-                        Text("More").font(.caption2.bold())
-                    }
-                    .foregroundColor(.white)
-                    .frame(width: 64, height: 64)
-                    .background(Circle().fill(Color(red: 0.55, green: 0.45, blue: 0.75)))
-                }
-                .padding(.trailing, 16)
-                .padding(.bottom, 16)
-            }
+            .safeAreaInset(edge: .bottom) { logBar }
             .navigationDestination(isPresented: $goReport) { DoctorReportView() }
             .navigationDestination(isPresented: $goPhotos) { PhotoCompareView() }
             .navigationDestination(isPresented: $goFeedback) { FeedbackView() }
+            .sheet(isPresented: $showCapture, onDismiss: handleCaptureDismiss) {
+                QuickCaptureView(
+                    lastPart: entries.first?.bodyPart ?? "knee",
+                    lastSeverity: entries.first?.severity ?? 2,
+                    onSave: { entry in save(entry) },
+                    onDetails: { entry in pendingDetails = entry }
+                )
+                .presentationDetents([.height(560), .large])
+                .presentationDragIndicator(.visible)
+            }
             .sheet(isPresented: $showEditor, onDismiss: {
                 entries = EntryStore.load()
                 editingEntry = nil
             }) {
                 EntryEditor(editing: editingEntry) { new in
-                    if let new {
-                        if let idx = entries.firstIndex(where: { $0.id == new.id }) {
-                            entries[idx] = new
-                        } else {
-                            entries.insert(new, at: 0)
-                        }
-                        EntryStore.save(entries)
-                    }
+                    if let new { save(new) }
                     showEditor = false
                 }
             }
         }
     }
 
-    /// 一键Quick Log：上次Area+当前时间+quick 标记，落库即走
-    private func quickLog() {
-        let lastPart = entries.first?.bodyPart ?? "knee"
-        let entry = JointEntry(id: UUID(), date: Date(), bodyPart: lastPart,
-                               severity: 2, notes: "", photoFile: nil, photoFiles: nil,
-                               painDuration: nil, treatment: nil, triggers: [], quick: true, beighton: nil)
-        entries.insert(entry, at: 0)
-        EntryStore.save(entries)
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
-    }
+    // MARK: 列表
 
-    /// 左滑删除（含照片文件清理）
-    private func delete(_ entry: JointEntry) {
-        for file in entry.photoFiles ?? [] {
-            try? FileManager.default.removeItem(at: EntryStore.photoURL(file))
-        }
-        entries.removeAll { $0.id == entry.id }
-        EntryStore.deletePhotoFiles(entry)   // 11-23修：孤儿照片清理（磁盘泄漏）
-        EntryStore.save(entries)
-    }
-
-    private var emptyView: some View {
-        VStack(spacing: 14) {
-            Spacer()
-            Image(systemName: "figure.yoga")
-                .font(.system(size: 52))
-                .foregroundColor(.purple)
-            Text("Track your joints")
-                .font(.headline)
-            Text("Tap Quick Log (bottom left) during a flare — fill in details later. Use ＋ for full entries.")
-                .font(.footnote)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-            Spacer()
-        }
-    }
-
-    private var timelineList: some View {
+    private var entryList: some View {
         List {
-            ForEach(entries) { entry in
-                Button {
-                    editingEntry = entry
-                    showEditor = true
-                } label: {
-                    EntryRow(entry: entry)
-                }
-                .buttonStyle(.plain)
-                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                    Button(role: .destructive) {
-                        delete(entry)
-                    } label: {
-                        Label("Delete", systemImage: "trash")
-                    }
-                }
-            }
+            headerRow
+            weekRow
+            sectionHeadRow
+            rowsContent
         }
         .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(Theme.paper)
     }
 
-    private var groupedList: some View {
-        List {
-            ForEach(EntryStore.grouped(entries), id: \.part) { group in
-                Section("\(group.label) · \(group.count)") {
-                    ForEach(group.items) { e in
-                        Button {
-                            editingEntry = e
-                            showEditor = true
-                        } label: { EntryRow(entry: e) }
-                        .buttonStyle(.plain)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(role: .destructive) {
-                                delete(e)
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                        }
+    private var headerRow: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(dateRangeText)
+                .font(Theme.mono(9.5))
+                .foregroundColor(Theme.ink3)
+            Text("This week")
+                .font(Theme.serif(31))
+                .foregroundColor(Theme.ink)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 2)
+        .listRowInsets(EdgeInsets(top: 0, leading: 18, bottom: 4, trailing: 18))
+        .listRowSeparator(.hidden)
+        .listRowBackground(Theme.paper)
+    }
+
+    private var weekRow: some View {
+        weekCard
+            .listRowInsets(EdgeInsets(top: 8, leading: 18, bottom: 4, trailing: 18))
+            .listRowSeparator(.hidden)
+            .listRowBackground(Theme.paper)
+    }
+
+    private var weekCard: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("FLARE PATTERN")
+                    .font(Theme.mono(9))
+                    .foregroundColor(Theme.ink3)
+                Spacer()
+                Button {
+                    goReport = true
+                } label: {
+                    HStack(spacing: 2) {
+                        Text("Report")
+                            .font(Theme.ui(10.5, .semibold))
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 8, weight: .bold))
                     }
+                    .foregroundColor(Theme.accent)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.bottom, 10)
+
+            HStack(alignment: .bottom, spacing: 4) {
+                ForEach(Array(weekBuckets.enumerated()), id: \.offset) { _, bucket in
+                    dayColumn(bucket)
                 }
             }
+            .frame(height: 62)
+
+            Rectangle()
+                .fill(Theme.hair)
+                .frame(height: 1)
+                .padding(.top, 12)
+
+            HStack(alignment: .center, spacing: 6) {
+                HStack(alignment: .firstTextBaseline, spacing: 5) {
+                    Text("\(weekTotal)")
+                        .font(Theme.serif(24))
+                        .foregroundColor(Theme.ink)
+                    Text("flares")
+                        .font(Theme.ui(11))
+                        .foregroundColor(Theme.ink2)
+                }
+                Rectangle()
+                    .fill(Theme.hair)
+                    .frame(width: 1, height: 11)
+                    .padding(.horizontal, 2)
+                Text(topAreaText)
+                    .font(Theme.ui(10.5))
+                    .foregroundColor(Theme.ink2)
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                Text(deltaText)
+                    .font(Theme.mono(10, .bold))
+                    .foregroundColor(weekDelta == 0 ? Theme.ink3 : Theme.severityColor(2))
+                    .lineLimit(1)
+            }
+            .padding(.top, 11)
         }
+        .padding(14)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.cardRadius))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.cardRadius)
+                .stroke(Theme.hair, lineWidth: 1)
+        )
+    }
+
+    private func dayColumn(_ bucket: (date: Date, count: Int, peak: Int)) -> some View {
+        let isToday = Calendar.current.isDateInToday(bucket.date)
+        let height = bucket.count == 0
+            ? 5.0
+            : min(14.0 + Double(bucket.peak) * 7.0 + Double(min(bucket.count, 3)) * 4.0, 40.0)
+        let fill = bucket.count == 0 ? Theme.hair : Theme.severityColor(max(bucket.peak, 0))
+        return VStack(spacing: 5) {
+            Spacer(minLength: 0)
+            RoundedRectangle(cornerRadius: 2.5)
+                .fill(fill)
+                .frame(height: height)
+            Text(EntryStats.weekdayLetter(bucket.date))
+                .font(Theme.mono(9, isToday ? .bold : .regular))
+                .foregroundColor(isToday ? Theme.paper : Theme.ink3)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 1)
+                .background(isToday ? Theme.ink : Color.clear, in: RoundedRectangle(cornerRadius: 3))
+        }
+        .frame(maxWidth: .infinity, maxHeight: 62, alignment: .bottom)
+    }
+
+    private var sectionHeadRow: some View {
+        HStack {
+            Text("RECENT")
+                .font(Theme.mono(9.5))
+                .foregroundColor(Theme.ink3)
+            Spacer()
+            Button {
+                grouping.toggle()
+            } label: {
+                HStack(spacing: 3) {
+                    Text(grouping ? "By time" : "By area")
+                        .font(Theme.ui(10.5, .semibold))
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 8, weight: .bold))
+                }
+                .foregroundColor(Theme.accent)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.top, 21)
+        .padding(.bottom, 2)
+        .listRowInsets(EdgeInsets(top: 0, leading: 18, bottom: 0, trailing: 18))
+        .listRowSeparator(.hidden)
+        .listRowBackground(Theme.paper)
+    }
+
+    @ViewBuilder
+    private var rowsContent: some View {
+        if grouping {
+            ForEach(EntryStore.grouped(entries), id: \.part) { group in
+                groupLabel(group.label, group.count)
+                ForEach(group.items) { entry in
+                    row(entry)
+                }
+            }
+        } else {
+            ForEach(entries) { entry in
+                row(entry)
+            }
+        }
+    }
+
+    private func groupLabel(_ label: String, _ count: Int) -> some View {
+        Text("\(label.uppercased()) · \(count)")
+            .font(Theme.mono(9))
+            .foregroundColor(Theme.ink3)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 12)
+            .listRowInsets(EdgeInsets(top: 0, leading: 18, bottom: 2, trailing: 18))
+            .listRowSeparator(.hidden)
+            .listRowBackground(Theme.paper)
+    }
+
+    private func row(_ entry: JointEntry) -> some View {
+        Button {
+            editingEntry = entry
+            showEditor = true
+        } label: {
+            EntryRow(entry: entry)
+        }
+        .buttonStyle(.plain)
+        .listRowInsets(EdgeInsets(top: 0, leading: 18, bottom: 0, trailing: 18))
+        .listRowSeparator(.hidden)
+        .listRowBackground(Theme.paper)
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button(role: .destructive) {
+                delete(entry)
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
+    }
+
+    // MARK: 底部主行动
+
+    private var logBar: some View {
+        VStack(spacing: 0) {
+            Rectangle()
+                .fill(Theme.hair)
+                .frame(height: 0.5)
+            Button {
+                showCapture = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 15, weight: .bold))
+                    Text("Log a flare")
+                        .font(Theme.ui(14.5, .semibold))
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .background(RoundedRectangle(cornerRadius: 13).fill(Theme.accent))
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 18)
+            .padding(.top, 10)
+            .padding(.bottom, 6)
+        }
+        .background(Theme.paper)
+    }
+
+    // MARK: 空状态
+
+    private var emptyState: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(Date().formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()).uppercased())
+                .font(Theme.mono(9.5))
+                .foregroundColor(Theme.ink3)
+            Text("HyperLog")
+                .font(Theme.serif(23))
+                .foregroundColor(Theme.ink)
+                .padding(.top, 2)
+
+            Spacer(minLength: 40)
+
+            Text("Your joints,\non the record.")
+                .font(Theme.serif(31))
+                .foregroundColor(Theme.ink)
+                .lineSpacing(3)
+
+            Text("Log a flare in two taps today — the pattern it draws is what convinces a doctor tomorrow.")
+                .font(Theme.ui(13))
+                .foregroundColor(Theme.ink2)
+                .lineSpacing(3)
+                .padding(.top, 12)
+
+            HStack(alignment: .top, spacing: 7) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 12))
+                    .foregroundColor(Theme.accent)
+                Text("No account. Photos and notes never leave this phone.")
+                    .font(Theme.ui(11))
+                    .foregroundColor(Theme.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(11)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 9))
+            .overlay(RoundedRectangle(cornerRadius: 9).stroke(Theme.hair, lineWidth: 1))
+            .padding(.top, 20)
+
+            Spacer(minLength: 20)
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 8)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    // MARK: 数据
+
+    private var weekBuckets: [(date: Date, count: Int, peak: Int)] {
+        EntryStats.dailyBuckets(entries, days: 7)
+    }
+    private var weekTotal: Int {
+        weekBuckets.reduce(0) { $0 + $1.count }
+    }
+    private var weekDelta: Int {
+        EntryStats.weekDelta(entries)
+    }
+    private var deltaText: String {
+        if weekDelta == 0 { return "even" }
+        return (weekDelta > 0 ? "+" : "") + "\(weekDelta) vs last"
+    }
+    private var topAreaText: String {
+        guard let top = EntryStats.topArea(entries) else { return "No pattern yet" }
+        return "\(top.label) most frequent"
+    }
+    private var dateRangeText: String {
+        let cal = Calendar.current
+        let today = Date()
+        let start = cal.date(byAdding: .day, value: -6, to: today) ?? today
+        let a = start.formatted(.dateTime.month(.abbreviated).day())
+        let b = today.formatted(.dateTime.month(.abbreviated).day())
+        return "\(a) — \(b)".uppercased()
+    }
+
+    // MARK: 动作
+
+    private func save(_ entry: JointEntry) {
+        if let idx = entries.firstIndex(where: { $0.id == entry.id }) {
+            entries[idx] = entry
+        } else {
+            entries.insert(entry, at: 0)
+        }
+        EntryStore.save(entries)
+    }
+
+    private func handleCaptureDismiss() {
+        guard let pending = pendingDetails else { return }
+        pendingDetails = nil
+        editingEntry = pending
+        // 等前一个 sheet 完全收起再弹编辑器，避免 presenting 冲突
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+            showEditor = true
+        }
+    }
+
+    private func delete(_ entry: JointEntry) {
+        EntryStore.deletePhotoFiles(entry)
+        entries.removeAll { $0.id == entry.id }
+        EntryStore.save(entries)
     }
 }
 
+// MARK: - 记录行
+
 struct EntryRow: View {
     let entry: JointEntry
+    @ScaledMetric(relativeTo: .body) private var thumbSize: CGFloat = 50
+
     var body: some View {
-        HStack(spacing: 12) {
-            if let files = entry.photoFiles, !files.isEmpty,
-               let img = UIImage(contentsOfFile: EntryStore.photoURL(files[0]).path) {
-                Image(uiImage: img)
-                    .resizable().scaledToFill()
-                    .frame(width: 52, height: 52)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .overlay(alignment: .bottomTrailing) {
-                        if files.count > 1 {
-                            Text("\(files.count)")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundColor(.white)
-                                .padding(3)
-                                .background(Circle().fill(Color.purple))
-                        }
-                    }
-            } else {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.purple.opacity(0.12))
-                    .frame(width: 52, height: 52)
-                    .overlay(Image(systemName: "camera").foregroundColor(.purple))
+        HStack(alignment: .top, spacing: 11) {
+            thumbnail
+            VStack(alignment: .leading, spacing: 2) {
+                Text(EntryStore.displayPart(entry.bodyPart))
+                    .font(Theme.serif(17))
+                    .foregroundColor(Theme.ink)
+                    .lineLimit(1)
+                Text(metaLine)
+                    .font(Theme.ui(10.5, .medium))
+                    .foregroundColor(Theme.ink2)
+                    .lineLimit(1)
+                if !noteLine.isEmpty {
+                    Text(noteLine)
+                        .font(Theme.ui(10.5))
+                        .foregroundColor(Theme.ink3)
+                        .lineLimit(1)
+                }
             }
-            VStack(alignment: .leading, spacing: 3) {
-                HStack {
-                    Text(partLabel).font(.subheadline.weight(.semibold))
-                    if entry.quick {
-                        Text("To fill").font(.caption2.bold())
-                            .padding(.horizontal, 5).padding(.vertical, 1)
-                            .background(Color.orange.opacity(0.2), in: Capsule())
-                            .foregroundColor(.orange)
-                    }
-                    Spacer()
-                    Text(entry.severityLabel)
-                        .font(.caption2)
-                        .padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(severityColor.opacity(0.18), in: Capsule())
-                        .foregroundColor(severityColor)
-                }
-                HStack(spacing: 8) {
-                    if !entry.painDurationLabel.isEmpty {
-                        Text("pain: \(entry.painDurationLabel)").font(.caption).foregroundColor(.secondary)
-                    }
-                    if !entry.treatmentLabel.isEmpty {
-                        Text(entry.treatmentLabel).font(.caption).foregroundColor(.secondary)
-                    }
-                }
-                if !entry.notes.isEmpty {
-                    Text(entry.notes).font(.caption).foregroundColor(.secondary).lineLimit(2)
-                }
-                Text(entry.date.formatted(.dateTime.month().day().hour().minute()))
-                    .font(.caption2).foregroundColor(.secondary)
-            }
+            Spacer(minLength: 6)
+            Text(Theme.severityShortLabel(entry.severity))
+                .font(.system(size: 8.5, weight: .heavy))
+                .foregroundColor(.white)
+                .lineLimit(1)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3)
+                .background(Capsule().fill(Theme.severityColor(entry.severity)))
+                .padding(.top, 3)
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 11)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityText)
     }
 
-    private var partLabel: String {
-        EntryStore.displayPart(entry.bodyPart)
+    @ViewBuilder
+    private var thumbnail: some View {
+        let files = entry.photoFiles ?? []
+        if let first = files.first,
+           let img = UIImage(contentsOfFile: EntryStore.photoURL(first).path) {
+            Image(uiImage: img)
+                .resizable()
+                .scaledToFill()
+                .frame(width: thumbSize, height: thumbSize)
+                .clipShape(RoundedRectangle(cornerRadius: 11))
+                .overlay(RoundedRectangle(cornerRadius: 11).stroke(Theme.hair, lineWidth: 1))
+        } else {
+            RoundedRectangle(cornerRadius: 11)
+                .fill(Theme.paper)
+                .frame(width: thumbSize, height: thumbSize)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 11)
+                        .strokeBorder(Theme.hair, style: StrokeStyle(lineWidth: 1.2, dash: [3, 3]))
+                )
+                .overlay(
+                    Image(systemName: "camera")
+                        .font(.system(size: 14))
+                        .foregroundColor(Theme.ink3)
+                )
+        }
     }
 
-    private var severityColor: Color {
-        switch entry.severity {
-        case 0: return .green
-        case 1: return .yellow
-        case 2: return .orange
-        default: return .red
-        }
+    private var metaLine: String {
+        var parts: [String] = []
+        parts.append(entry.date.formatted(.dateTime.month(.abbreviated).day().hour().minute()))
+        if !entry.painDurationLabel.isEmpty { parts.append(entry.painDurationLabel.lowercased()) }
+        if !entry.treatmentLabel.isEmpty { parts.append(entry.treatmentLabel) }
+        return parts.joined(separator: " · ")
+    }
+
+    private var noteLine: String {
+        if !entry.notes.isEmpty { return entry.notes }
+        if entry.quick { return "Draft — tap to finish the details." }
+        return ""
+    }
+
+    private var accessibilityText: String {
+        var parts = [EntryStore.displayPart(entry.bodyPart), Theme.severityLabel(entry.severity)]
+        parts.append(entry.date.formatted(.dateTime.month(.wide).day().hour().minute()))
+        if !entry.notes.isEmpty { parts.append(entry.notes) }
+        return parts.joined(separator: ", ")
     }
 }
