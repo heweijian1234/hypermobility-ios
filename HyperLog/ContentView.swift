@@ -219,7 +219,7 @@ struct ContentView: View {
                 grouping.toggle()
             } label: {
                 HStack(spacing: 3) {
-                    Text(grouping ? "By time" : "By area")
+                    Text(groupingModeKey)
                         .font(Theme.ui(10.5, .semibold))
                     Image(systemName: "chevron.down")
                         .font(.system(size: 8, weight: .bold))
@@ -369,13 +369,17 @@ struct ContentView: View {
     private var weekDelta: Int {
         EntryStats.weekDelta(entries)
     }
+    private var groupingModeKey: LocalizedStringKey {
+        grouping ? "By time" : "By area"
+    }
     private var deltaText: String {
-        if weekDelta == 0 { return "even" }
-        return (weekDelta > 0 ? "+" : "") + "\(weekDelta) vs last"
+        if weekDelta == 0 { return L("even") }
+        let sign = weekDelta > 0 ? "+" : "-"
+        return L("%@ vs last", sign + "\(abs(weekDelta))")
     }
     private var topAreaText: String {
-        guard let top = EntryStats.topArea(entries) else { return "No pattern yet" }
-        return "\(top.label) most frequent"
+        guard let top = EntryStats.topArea(entries) else { return L("No pattern yet") }
+        return L("%@ most frequent", top.label)
     }
     private var dateRangeText: String {
         let cal = Calendar.current
@@ -492,7 +496,7 @@ struct EntryRow: View {
 
     private var noteLine: String {
         if !entry.notes.isEmpty { return entry.notes }
-        if entry.quick { return "Draft — tap to finish the details." }
+        if entry.quick { return L("Draft — tap to finish the details.") }
         return ""
     }
 

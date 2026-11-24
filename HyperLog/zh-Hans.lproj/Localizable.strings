@@ -1,0 +1,190 @@
+/* ============================================================
+   HyperLog — 简体中文
+   键必须与 en.lproj/Localizable.strings 完全一致（键=英文原文）。
+   ============================================================ */
+
+/* ---------- 品牌 & 通用 ---------- */
+"HyperLog" = "HyperLog";
+"Save" = "保存";
+"Cancel" = "取消";
+"Delete" = "删除";
+"Done" = "完成";
+"Other" = "其他";
+
+/* ---------- 首页 ---------- */
+"This week" = "本周";
+"FLARE PATTERN" = "发作规律";
+"Report" = "报告";
+"RECENT" = "最近记录";
+"By area" = "按部位";
+"By time" = "按时间";
+"Log a flare" = "记录一次发作";
+"flares" = "次发作";
+"even" = "持平";
+"%@ vs last" = "较上周 %@";
+"%@ most frequent" = "最常见：%@";
+"No pattern yet" = "暂无规律";
+"Draft — tap to finish the details." = "待补充 — 点开补完细节";
+"Report sharing" = "分享报告";
+"Photo compare" = "照片对比";
+"Feedback" = "反馈";
+
+/* ---------- 空状态 ---------- */
+"Your joints,\non the record." = "你的关节，\n都有记录。";
+"Log a flare in two taps today — the pattern it draws is what convinces a doctor tomorrow." = "今天两次点击记一次发作——攒出来的规律，才是明天说服医生的东西。";
+"No account. Photos and notes never leave this phone." = "不用注册。照片和备注永远不离开这台手机。";
+
+/* ---------- 快速记录 ---------- */
+"What just happened?" = "刚才怎么了？";
+"Now" = "现在";
+"AREA" = "部位";
+"HOW MUCH" = "程度";
+"NOTE — OPTIONAL" = "备注 — 可选";
+"Severe = it slipped out or dislocated." = "严重 = 脱位或半脱位。";
+"Reaching for a box overhead." = "抬手够高处的箱子。";
+"Add details" = "补充细节";
+
+/* ---------- 详细记录 ---------- */
+"DETAILS" = "细节";
+"PHOTOS" = "照片";
+"Pain duration" = "疼痛持续";
+"Treatment" = "处置方式";
+"Triggers" = "诱因";
+"Notes" = "备注";
+"What happened, how it feels, what you were doing…" = "发生了什么、什么感觉、当时在做什么…";
+"Type the area (e.g. rib, toe, TMJ…)" = "输入部位（如 肋骨、脚趾、颞下颌…）";
+"Camera" = "拍照";
+"Library" = "相册";
+"Beighton self-check" = "Beighton 自评";
+"Optional · saved with this entry" = "可选 · 随本条记录保存";
+"New entry" = "新建记录";
+"Edit entry" = "编辑记录";
+"“Not sure” clears the others." = "选「不确定」会清掉其他选项。";
+"Used by clinicians as a 9-point screen for generalised joint hypermobility. This is a self-check, not a diagnosis." = "临床上用这 9 项筛查全身关节松弛。此处为自评，不是诊断。";
+"Beighton · %@/9" = "Beighton · %@/9";
+
+/* ---------- 部位 ---------- */
+"Knee" = "膝";
+"Shoulder" = "肩";
+"Fingers" = "手指";
+"Hip" = "髋";
+"Back" = "背";
+"Ankle" = "踝";
+"Wrist" = "腕";
+"Neck" = "颈";
+"Jaw" = "下颌";
+
+/* ---------- 严重度 ---------- */
+"Mild" = "轻度";
+"Moderate" = "中度";
+"Significant" = "明显";
+"Severe" = "严重";
+"Severe (subluxation/dislocation)" = "严重（脱位/半脱位）";
+"MILD" = "轻度";
+"MODERATE" = "中度";
+"SIGNIFICANT" = "明显";
+"SEVERE" = "严重";
+
+/* ---------- 疼痛持续 ---------- */
+"A few minutes" = "几分钟";
+"~30 minutes" = "约 30 分钟";
+"1-2 hours" = "1–2 小时";
+"Half a day" = "半天";
+"All day" = "一整天";
+"Still hurting" = "还在疼";
+
+/* ---------- 处置 ---------- */
+"Self-repositioned" = "自己复位";
+"Repositioned at hospital" = "医院复位";
+"Went back on its own" = "自己回去了";
+
+/* ---------- 诱因 ---------- */
+"Sitting long" = "久坐";
+"Exercise / stretch" = "运动/拉伸";
+"Lifting heavy" = "提重物";
+"Sleep posture" = "睡姿";
+"Weather change" = "天气变化";
+"Not sure" = "不确定";
+
+/* ---------- Beighton 九项 ---------- */
+"Pinky (right)" = "小指（右）";
+"Pinky (left)" = "小指（左）";
+"Thumb (right)" = "拇指（右）";
+"Thumb (left)" = "拇指（左）";
+"Elbow (right)" = "肘（右）";
+"Elbow (left)" = "肘（左）";
+"Knee (right)" = "膝（右）";
+"Knee (left)" = "膝（左）";
+"Bend forward" = "体前屈";
+"Bends past 90°" = "能弯过 90°";
+"Can be pressed to the forearm" = "能贴到前臂";
+"Hyperextends past 10°" = "过伸超 10°";
+"Hyperextends past 10° standing" = "站立时过伸超 10°";
+"Knees straight, palms flat on floor" = "直腿，手掌贴地";
+
+/* ---------- 报告 ---------- */
+"FOR YOUR DOCTOR" = "给医生看";
+"The last 7 days" = "最近 7 天";
+"The last 30 days" = "最近 30 天";
+"All time" = "全部记录";
+"7 days" = "7 天";
+"30 days" = "30 天";
+"All" = "全部";
+"EPISODES RECORDED" = "已记录发作";
+"episodes" = "次发作";
+"severe" = "次严重";
+"hospital reset" = "次医院复位";
+"areas" = "个部位";
+"%@ vs prev." = "较上期 %@";
+"even vs prev." = "与上期持平";
+"TODAY" = "今天";
+"Send to doctor" = "发给医生";
+"Share PDF another way" = "用其他方式分享 PDF";
+"Summary, per-area chart, daily trend, latest Beighton score and the full episode list — photos included." = "包含汇总、部位图表、每日趋势、最近一次 Beighton 分值和完整发作清单——含照片。";
+
+/* ---------- 照片对比 ---------- */
+"CHANGE OVER TIME" = "随时间变化";
+"THEN" = "之前";
+"NOW" = "现在";
+"FILLING" = "填充";
+"TAP A PHOTO BELOW" = "点下方照片";
+"%@ DAYS APART · TAP A PHOTO BELOW" = "相隔 %@ 天 · 点下方照片";
+"SAME DAY · TAP EITHER TO SWAP" = "同一天 · 点任一张换位";
+"Same joint, same distance. Tap a thumbnail to load it into the selected side." = "同一关节、同一距离。点缩略图载入选中的一侧。";
+"No photos yet" = "还没有照片";
+"Attach photos to an entry when you log a flare — they will line up here so you can see swelling change side by side." = "记录发作时给这一次附上照片——它们会在这里并排排好，肿胀变化一眼能看出来。";
+"Compare" = "对比";
+
+/* ---------- 关于 ---------- */
+"About & Privacy" = "关于与隐私";
+"All entries and photos stay on this device. Nothing is ever uploaded." = "所有记录和照片都留在本机，从不上传。";
+"What HyperLog is for" = "HyperLog 用来做什么";
+"A simple journal for hypermobile joints — log pain, flexibility changes, subluxations or dislocations with photos and notes. Entries group themselves by joint so patterns jump out. Perfect to show your physio or rheumatologist." = "一个给关节松弛人群的简记本——记录疼痛、活动度变化、半脱位或脱位，可附照片和备注。记录会按关节自动归类，规律一眼看得出。就诊时给理疗师或风湿科医生看正合适。";
+"Not a medical device" = "不是医疗器械";
+"HyperLog records what you experience. It does not diagnose any condition (including Ehlers-Danlos syndromes or generalized joint hypermobility). Consult a healthcare professional for medical concerns." = "HyperLog 只记录你的主观感受，不诊断任何疾病（包括 Ehlers-Danlos 综合征或全身关节松弛）。有医疗问题请咨询专业医护。";
+"Privacy" = "隐私";
+"No account, no network, no analytics, no ads.\nPhotos are stored inside the app's own storage.\nNothing leaves the app unless you choose to share it." = "不用账号、不联网、无统计、无广告。\n照片存在 App 自己的存储里。\n除非你主动分享，任何内容都不会离开 App。";
+
+/* ---------- 反馈 ---------- */
+"Tell us what you think" = "说说你的想法";
+"What works, what doesn't, what you wish existed — the developer reads every message." = "哪里好用、哪里不好用、希望加什么——每条反馈开发者都会看。";
+"Send to developer" = "发给开发者";
+"No mail account on this device — send feedback to:" = "本机没有配置邮件账户——请发到：";
+"Sorry for any trouble! Please tell the developer what's not working — it will be fixed as soon as possible. New feature ideas are also very welcome, so the app can serve you better." = "给你添麻烦了！哪里不好用请告诉开发者，会尽快修。也欢迎提新功能想法，让这个 App 更合用。";
+"Email the Developer" = "邮件联系开发者";
+"No system Mail account on this phone, so the draft can't open here." = "这台手机没有系统邮件账户，草稿打不开。";
+"Your feedback has been copied. Send it from any mail app (Gmail / Outlook) to:" = "反馈内容已复制。用任意邮件 App（Gmail / Outlook）发到：";
+"Long-press the address above to copy it." = "长按上面的地址即可复制。";
+
+/* ---------- PDF ---------- */
+"HyperLog Joint Episode Report" = "HyperLog 关节发作报告";
+"Episodes per area" = "各部位发作次数";
+"Daily trend" = "每日趋势";
+"Episode details" = "发作明细";
+"Latest Beighton: %@" = "最近 Beighton：%@";
+"Range: %@ · %@ episodes · Severe %@ · Hospital: %@" = "范围：%@ · 共 %@ 次 · 严重 %@ 次 · 医院复位 %@ 次";
+"Triggers: %@" = "诱因：%@";
+"Notes: %@" = "备注：%@";
+"Beighton: %@" = "Beighton：%@";
+"Last 7 days" = "最近 7 天";
+"Last 30 days" = "最近 30 天";

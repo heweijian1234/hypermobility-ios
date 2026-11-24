@@ -40,11 +40,11 @@ enum Theme {
         severityColors[min(max(level, 0), 3)]
     }
     static func severityLabel(_ level: Int) -> String {
-        severityFull[min(max(level, 0), 3)]
+        L(severityFull[min(max(level, 0), 3)])
     }
     /// 列表胶囊用：全大写短标签，避免 "Severe (subluxation/dislocation)" 撑爆行宽
     static func severityShortLabel(_ level: Int) -> String {
-        severityUpper[min(max(level, 0), 3)]
+        L(severityUpper[min(max(level, 0), 3)])
     }
 
     // MARK: 字体：衬线用系统 New York（iOS 自带，零字体资源）

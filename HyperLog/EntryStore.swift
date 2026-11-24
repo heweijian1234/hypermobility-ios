@@ -20,10 +20,10 @@ struct JointEntry: Codable, Identifiable {
 
     var severityLabel: String {
         switch severity {
-        case 0: return "Mild"
-        case 1: return "Moderate"
-        case 2: return "Significant"
-        default: return "Severe (subluxation/dislocation)"
+        case 0: return L("Mild")
+        case 1: return L("Moderate")
+        case 2: return L("Significant")
+        default: return L("Severe (subluxation/dislocation)")
         }
     }
     var treatmentLabel: String {
@@ -42,37 +42,38 @@ struct BeightonRecord: Codable, Identifiable {
 }
 
 enum EntryStore {
+    // 显示名走 L()：数组是懒加载，首次访问时按当前系统语言取译文
     static let bodyParts: [(key: String, label: String)] = [
-        ("knee", "Knee"), ("shoulder", "Shoulder"), ("finger", "Fingers"),
-        ("hip", "Hip"), ("back", "Back"), ("ankle", "Ankle"),
-        ("wrist", "Wrist"), ("neck", "Neck"), ("jaw", "Jaw"), ("other", "Other"),
+        ("knee", L("Knee")), ("shoulder", L("Shoulder")), ("finger", L("Fingers")),
+        ("hip", L("Hip")), ("back", L("Back")), ("ankle", L("Ankle")),
+        ("wrist", L("Wrist")), ("neck", L("Neck")), ("jaw", L("Jaw")), ("other", L("Other")),
     ]
 
     // 疼痛持续时间（选项式——疼痛中单手能选，不打字）
     static let painDurationOptions: [(key: String, label: String)] = [
-        ("minutes", "A few minutes"),
-        ("halfhour", "~30 minutes"),
-        ("couplehours", "1-2 hours"),
-        ("halfday", "Half a day"),
-        ("allday", "All day"),
-        ("ongoing", "Still hurting"),
+        ("minutes", L("A few minutes")),
+        ("halfhour", L("~30 minutes")),
+        ("couplehours", L("1-2 hours")),
+        ("halfday", L("Half a day")),
+        ("allday", L("All day")),
+        ("ongoing", L("Still hurting")),
     ]
 
     // 处置（医生问诊必问项）
     static let treatmentOptions: [(key: String, label: String)] = [
-        ("self", "Self-repositioned"),
-        ("hospital", "Repositioned at hospital"),
-        ("none", "Went back on its own"),
+        ("self", L("Self-repositioned")),
+        ("hospital", L("Repositioned at hospital")),
+        ("none", L("Went back on its own")),
     ]
 
     // 关节版诱因（11-25：去掉 emoji，跟 SF Symbols 图标体系冲突，纯文字更稳）
     static let triggerOptions: [(key: String, label: String)] = [
-        ("sitting", "Sitting long"),
-        ("sports", "Exercise / stretch"),
-        ("lifting", "Lifting heavy"),
-        ("sleepPosture", "Sleep posture"),
-        ("weather", "Weather change"),
-        ("none", "Not sure"),
+        ("sitting", L("Sitting long")),
+        ("sports", L("Exercise / stretch")),
+        ("lifting", L("Lifting heavy")),
+        ("sleepPosture", L("Sleep posture")),
+        ("weather", L("Weather change")),
+        ("none", L("Not sure")),
     ]
 
     static var directory: URL {
@@ -86,7 +87,7 @@ enum EntryStore {
     static func displayPart(_ key: String) -> String {
         if key.hasPrefix("other:") {
             let custom = String(key.dropFirst("other:".count))
-            return custom.isEmpty ? "Other" : custom
+            return custom.isEmpty ? L("Other") : custom
         }
         return bodyParts.first(where: { $0.key == key })?.label ?? key
     }

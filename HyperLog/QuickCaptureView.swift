@@ -36,7 +36,7 @@ struct QuickCaptureView: View {
             HStack(spacing: 5) {
                 Image(systemName: "clock")
                     .font(.system(size: 10, weight: .semibold))
-                Text("Now · " + Date().formatted(.dateTime.hour().minute()))
+                (Text("Now") + Text(verbatim: " · " + Date().formatted(.dateTime.hour().minute())))
                     .font(Theme.mono(10.5))
             }
             .foregroundColor(Theme.ink2)
@@ -96,7 +96,7 @@ struct QuickCaptureView: View {
 
     // MARK: 小件
 
-    private func label(_ text: String) -> some View {
+    private func label(_ text: LocalizedStringKey) -> some View {
         Text(text)
             .font(Theme.mono(9))
             .foregroundColor(Theme.ink3)

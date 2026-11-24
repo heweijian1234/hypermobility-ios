@@ -52,7 +52,7 @@ struct AboutView: View {
         }
     }
 
-    private func section(_ title: String, _ text: String) -> some View {
+    private func section(_ title: LocalizedStringKey, _ text: LocalizedStringKey) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(Theme.serif(17))

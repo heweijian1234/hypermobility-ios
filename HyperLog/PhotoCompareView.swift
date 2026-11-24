@@ -125,7 +125,7 @@ struct PhotoCompareView: View {
         .padding(.horizontal, 18)
     }
 
-    private func photoCell(_ item: PhotoItem?, label: String) -> some View {
+    private func photoCell(_ item: PhotoItem?, label: LocalizedStringKey) -> some View {
         ZStack(alignment: .topLeading) {
             Theme.paper
             if let item,
@@ -172,11 +172,11 @@ struct PhotoCompareView: View {
     }
 
     private var gapText: String {
-        guard let a = thenItem, let b = nowItem else { return "TAP A PHOTO BELOW" }
+        guard let a = thenItem, let b = nowItem else { return L("TAP A PHOTO BELOW") }
         let days = Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: a.date),
                                                    to: Calendar.current.startOfDay(for: b.date)).day ?? 0
-        if days == 0 { return "SAME DAY · TAP EITHER TO SWAP" }
-        return "\(days) DAYS APART · TAP A PHOTO BELOW"
+        if days == 0 { return L("SAME DAY · TAP EITHER TO SWAP") }
+        return L("%@ DAYS APART · TAP A PHOTO BELOW", "\(days)")
     }
 
     // MARK: 换图
@@ -194,7 +194,7 @@ struct PhotoCompareView: View {
         .padding(.top, 14)
     }
 
-    private func slotButton(_ text: String, _ tag: Int) -> some View {
+    private func slotButton(_ text: LocalizedStringKey, _ tag: Int) -> some View {
         let selected = slot == tag
         return Button {
             slot = tag

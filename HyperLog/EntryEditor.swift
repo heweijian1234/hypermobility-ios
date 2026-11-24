@@ -45,7 +45,7 @@ struct EntryEditor: View {
                 .padding(.bottom, 34)
             }
             .background(Theme.paper)
-            .navigationTitle(editing == nil ? "New entry" : "Edit entry")
+            .navigationTitle(L(editing == nil ? "New entry" : "Edit entry"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(Theme.paper, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
@@ -226,7 +226,7 @@ struct EntryEditor: View {
         .padding(.vertical, 11)
     }
 
-    private func valueRow(_ title: String, _ value: String) -> some View {
+    private func valueRow(_ title: LocalizedStringKey, _ value: String) -> some View {
         HStack(spacing: 6) {
             Text(title)
                 .font(Theme.ui(12.5))
@@ -365,7 +365,7 @@ struct EntryEditor: View {
 
     // MARK: 小件
 
-    private func cardLabel(_ text: String) -> some View {
+    private func cardLabel(_ text: LocalizedStringKey) -> some View {
         Text(text)
             .font(Theme.mono(9))
             .foregroundColor(Theme.ink3)
@@ -526,7 +526,7 @@ struct BeightonEditorView: View {
                     .font(Theme.ui(11))
             }
         }
-        .navigationTitle("Beighton · \(score)/9")
+        .navigationTitle(L("Beighton · %@/9", "\(score)"))
         .navigationBarTitleDisplayMode(.inline)
     }
 

@@ -33,9 +33,9 @@ struct DoctorReportView: View {
     private var maxAreaCount: Int { max(groups.first?.count ?? 1, 1) }
     private var rangeLabel: String {
         switch range {
-        case 0: return "The last 7 days"
-        case 2: return "All time"
-        default: return "The last 30 days"
+        case 0: return L("The last 7 days")
+        case 2: return L("All time")
+        default: return L("The last 30 days")
         }
     }
 
@@ -91,7 +91,7 @@ struct DoctorReportView: View {
         .padding(.bottom, 14)
     }
 
-    private func rangeChip(_ text: String, _ tag: Int) -> some View {
+    private func rangeChip(_ text: LocalizedStringKey, _ tag: Int) -> some View {
         let selected = range == tag
         return Button {
             range = tag
@@ -150,7 +150,7 @@ struct DoctorReportView: View {
         .padding(.horizontal, 18)
     }
 
-    private func metaStat(_ value: String, _ label: String) -> some View {
+    private func metaStat(_ value: String, _ label: LocalizedStringKey) -> some View {
         HStack(spacing: 4) {
             Text(value)
                 .font(Theme.ui(11.5, .bold))
@@ -170,8 +170,9 @@ struct DoctorReportView: View {
         let prevStart = start.addingTimeInterval(-Double(days) * 86400)
         let prev = entries.filter { $0.date >= prevStart && $0.date < start }.count
         let delta = ranged.count - prev
-        if delta == 0 { return "even vs prev." }
-        return (delta > 0 ? "+" : "") + "\(delta) vs prev."
+        if delta == 0 { return L("even vs prev.") }
+        let sign = delta > 0 ? "+" : "-"
+        return L("%@ vs prev.", sign + "\(abs(delta))")
     }
 
     // MARK: 部位条形
@@ -349,12 +350,17 @@ struct DoctorReportView: View {
             let cg = ctx.cgContext
 
             // 标题
-            ("HyperLog Joint Episode Report" as NSString).draw(
+            (L("HyperLog Joint Episode Report") as NSString).draw(
                 at: CGPoint(x: 40, y: 36),
                 withAttributes: [.font: UIFont.boldSystemFont(ofSize: 18), .foregroundColor: purple])
-            let sub = "Range: \(range == 0 ? "last 7 days" : range == 1 ? "last 30 days" : "All") ·  \(ranged.count)  episodes · Severe \(ranged.filter { $0.severity >= 3 }.count) · Hospital: \(ranged.filter { $0.treatment == "hospital" }.count)"
+            let rangeText = L(range == 0 ? "Last 7 days" : range == 1 ? "Last 30 days" : "All")
+            let sub = L("Range: %@ · %@ episodes · Severe %@ · Hospital: %@",
+                        rangeText,
+                        "\(ranged.count)",
+                        "\(ranged.filter { $0.severity >= 3 }.count)",
+                        "\(ranged.filter { $0.treatment == "hospital" }.count)")
             if let b = ranged.compactMap(\.beighton).last {
-                ("Latest Beighton: \(b)/9" as NSString).draw(
+                (L("Latest Beighton: %@", "\(b)/9") as NSString).draw(
                     at: CGPoint(x: 40, y: 76),
                     withAttributes: [.font: UIFont.boldSystemFont(ofSize: 12), .foregroundColor: purple])
             }
@@ -365,7 +371,7 @@ struct DoctorReportView: View {
             var y: CGFloat = 92
 
             // 图1：Episodes per area（横向条形）
-            ("Episodes per area" as NSString).draw(
+            (L("Episodes per area") as NSString).draw(
                 at: CGPoint(x: 40, y: y),
                 withAttributes: [.font: UIFont.boldSystemFont(ofSize: 12), .foregroundColor: UIColor.black])
             y += 18
@@ -384,7 +390,7 @@ struct DoctorReportView: View {
 
             y += 12
             // 图2：按日发作趋势（竖向条形）
-            ("Daily trend" as NSString).draw(
+            (L("Daily trend") as NSString).draw(
                 at: CGPoint(x: 40, y: y),
                 withAttributes: [.font: UIFont.boldSystemFont(ofSize: 12), .foregroundColor: UIColor.black])
             y += 14
@@ -412,7 +418,7 @@ struct DoctorReportView: View {
             y += chartH + 18
 
             // Episode details（含照片小图，自动翻页）
-            ("Episode details" as NSString).draw(
+            (L("Episode details") as NSString).draw(
                 at: CGPoint(x: 40, y: y),
                 withAttributes: [.font: UIFont.boldSystemFont(ofSize: 12), .foregroundColor: UIColor.black])
             y += 16
@@ -433,13 +439,13 @@ struct DoctorReportView: View {
                 y += 13
                 if !e.triggers.isEmpty {
                     let tr = e.triggers.compactMap { k in EntryStore.triggerOptions.first(where: { $0.key == k })?.label }.joined(separator: "、")
-                    ("Triggers: \(tr)" as NSString).draw(
+                    (L("Triggers: %@", tr) as NSString).draw(
                         at: CGPoint(x: 52, y: y),
                         withAttributes: [.font: UIFont.systemFont(ofSize: 8), .foregroundColor: UIColor.darkGray])
                     y += 12
                 }
                 if !e.notes.isEmpty {
-                    ("Notes：\(e.notes)" as NSString).draw(
+                    (L("Notes: %@", e.notes) as NSString).draw(
                         in: CGRect(x: 52, y: y, width: 480, height: 24),
                         withAttributes: [.font: UIFont.systemFont(ofSize: 8), .foregroundColor: UIColor.darkGray])
                     y += 14
@@ -456,7 +462,7 @@ struct DoctorReportView: View {
                 }
                 if !photos.isEmpty { y += 66 + 6 }
                 if let b = e.beighton {
-                    ("Beighton：\(b)/9" as NSString).draw(
+                    (L("Beighton: %@", "\(b)/9") as NSString).draw(
                         at: CGPoint(x: 52, y: y),
                         withAttributes: [.font: UIFont.systemFont(ofSize: 8), .foregroundColor: purple])
                     y += 12

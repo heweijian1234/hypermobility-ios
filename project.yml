@@ -4,6 +4,11 @@ options:
   deploymentTarget:
     iOS: "16.0"
   createIntermediateGroups: true
+  # 🔴 本地化：en = 主体语言（英文），zh-Hans = 简体中文；缺一个系统就当不支持该语言
+  knownRegions:
+    - en
+    - Base
+    - zh-Hans
 
 settings:
   base:
@@ -21,6 +26,11 @@ targets:
       path: HyperLog/Info.plist
       properties:
         CFBundleDisplayName: HyperLog
+        # 🔴 本地化声明：主语言英文，中英双语，跟随系统语言
+        CFBundleDevelopmentRegion: en
+        CFBundleLocalizations:
+          - en
+          - zh-Hans
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         UILaunchScreen:
@@ -39,7 +49,7 @@ targets:
         # 11-25 UI 改版：纸感浅色设计，深色模式暂未适配 → 先锁 Light（不半吊子上线深色）
         INFOPLIST_KEY_UIUserInterfaceStyle: Light
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        MARKETING_VERSION: "0.4.0"
+        MARKETING_VERSION: "0.5.0"
         CURRENT_PROJECT_VERSION: "1"
 
 schemes:

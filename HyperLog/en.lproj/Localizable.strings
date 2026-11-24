@@ -1,0 +1,190 @@
+/* ============================================================
+   HyperLog — English (base / development region)
+   键 = 英文原文；改文案时两边（en / zh-Hans）一起改，键必须一致。
+   ============================================================ */
+
+/* ---------- 品牌 & 通用 ---------- */
+"HyperLog" = "HyperLog";
+"Save" = "Save";
+"Cancel" = "Cancel";
+"Delete" = "Delete";
+"Done" = "Done";
+"Other" = "Other";
+
+/* ---------- 首页 ---------- */
+"This week" = "This week";
+"FLARE PATTERN" = "FLARE PATTERN";
+"Report" = "Report";
+"RECENT" = "RECENT";
+"By area" = "By area";
+"By time" = "By time";
+"Log a flare" = "Log a flare";
+"flares" = "flares";
+"even" = "even";
+"%@ vs last" = "%@ vs last";
+"%@ most frequent" = "%@ most frequent";
+"No pattern yet" = "No pattern yet";
+"Draft — tap to finish the details." = "Draft — tap to finish the details.";
+"Report sharing" = "Report sharing";
+"Photo compare" = "Photo compare";
+"Feedback" = "Feedback";
+
+/* ---------- 空状态 ---------- */
+"Your joints,\non the record." = "Your joints,\non the record.";
+"Log a flare in two taps today — the pattern it draws is what convinces a doctor tomorrow." = "Log a flare in two taps today — the pattern it draws is what convinces a doctor tomorrow.";
+"No account. Photos and notes never leave this phone." = "No account. Photos and notes never leave this phone.";
+
+/* ---------- 快速记录 ---------- */
+"What just happened?" = "What just happened?";
+"Now" = "Now";
+"AREA" = "AREA";
+"HOW MUCH" = "HOW MUCH";
+"NOTE — OPTIONAL" = "NOTE — OPTIONAL";
+"Severe = it slipped out or dislocated." = "Severe = it slipped out or dislocated.";
+"Reaching for a box overhead." = "Reaching for a box overhead.";
+"Add details" = "Add details";
+
+/* ---------- 详细记录 ---------- */
+"DETAILS" = "DETAILS";
+"PHOTOS" = "PHOTOS";
+"Pain duration" = "Pain duration";
+"Treatment" = "Treatment";
+"Triggers" = "Triggers";
+"Notes" = "Notes";
+"What happened, how it feels, what you were doing…" = "What happened, how it feels, what you were doing…";
+"Type the area (e.g. rib, toe, TMJ…)" = "Type the area (e.g. rib, toe, TMJ…)";
+"Camera" = "Camera";
+"Library" = "Library";
+"Beighton self-check" = "Beighton self-check";
+"Optional · saved with this entry" = "Optional · saved with this entry";
+"New entry" = "New entry";
+"Edit entry" = "Edit entry";
+"“Not sure” clears the others." = "“Not sure” clears the others.";
+"Used by clinicians as a 9-point screen for generalised joint hypermobility. This is a self-check, not a diagnosis." = "Used by clinicians as a 9-point screen for generalised joint hypermobility. This is a self-check, not a diagnosis.";
+"Beighton · %@/9" = "Beighton · %@/9";
+
+/* ---------- 部位 ---------- */
+"Knee" = "Knee";
+"Shoulder" = "Shoulder";
+"Fingers" = "Fingers";
+"Hip" = "Hip";
+"Back" = "Back";
+"Ankle" = "Ankle";
+"Wrist" = "Wrist";
+"Neck" = "Neck";
+"Jaw" = "Jaw";
+
+/* ---------- 严重度 ---------- */
+"Mild" = "Mild";
+"Moderate" = "Moderate";
+"Significant" = "Significant";
+"Severe" = "Severe";
+"Severe (subluxation/dislocation)" = "Severe (subluxation/dislocation)";
+"MILD" = "MILD";
+"MODERATE" = "MODERATE";
+"SIGNIFICANT" = "SIGNIFICANT";
+"SEVERE" = "SEVERE";
+
+/* ---------- 疼痛持续 ---------- */
+"A few minutes" = "A few minutes";
+"~30 minutes" = "~30 minutes";
+"1-2 hours" = "1-2 hours";
+"Half a day" = "Half a day";
+"All day" = "All day";
+"Still hurting" = "Still hurting";
+
+/* ---------- 处置 ---------- */
+"Self-repositioned" = "Self-repositioned";
+"Repositioned at hospital" = "Repositioned at hospital";
+"Went back on its own" = "Went back on its own";
+
+/* ---------- 诱因 ---------- */
+"Sitting long" = "Sitting long";
+"Exercise / stretch" = "Exercise / stretch";
+"Lifting heavy" = "Lifting heavy";
+"Sleep posture" = "Sleep posture";
+"Weather change" = "Weather change";
+"Not sure" = "Not sure";
+
+/* ---------- Beighton 九项 ---------- */
+"Pinky (right)" = "Pinky (right)";
+"Pinky (left)" = "Pinky (left)";
+"Thumb (right)" = "Thumb (right)";
+"Thumb (left)" = "Thumb (left)";
+"Elbow (right)" = "Elbow (right)";
+"Elbow (left)" = "Elbow (left)";
+"Knee (right)" = "Knee (right)";
+"Knee (left)" = "Knee (left)";
+"Bend forward" = "Bend forward";
+"Bends past 90°" = "Bends past 90°";
+"Can be pressed to the forearm" = "Can be pressed to the forearm";
+"Hyperextends past 10°" = "Hyperextends past 10°";
+"Hyperextends past 10° standing" = "Hyperextends past 10° standing";
+"Knees straight, palms flat on floor" = "Knees straight, palms flat on floor";
+
+/* ---------- 报告 ---------- */
+"FOR YOUR DOCTOR" = "FOR YOUR DOCTOR";
+"The last 7 days" = "The last 7 days";
+"The last 30 days" = "The last 30 days";
+"All time" = "All time";
+"7 days" = "7 days";
+"30 days" = "30 days";
+"All" = "All";
+"EPISODES RECORDED" = "EPISODES RECORDED";
+"episodes" = "episodes";
+"severe" = "severe";
+"hospital reset" = "hospital reset";
+"areas" = "areas";
+"%@ vs prev." = "%@ vs prev.";
+"even vs prev." = "even vs prev.";
+"TODAY" = "TODAY";
+"Send to doctor" = "Send to doctor";
+"Share PDF another way" = "Share PDF another way";
+"Summary, per-area chart, daily trend, latest Beighton score and the full episode list — photos included." = "Summary, per-area chart, daily trend, latest Beighton score and the full episode list — photos included.";
+
+/* ---------- 照片对比 ---------- */
+"CHANGE OVER TIME" = "CHANGE OVER TIME";
+"THEN" = "THEN";
+"NOW" = "NOW";
+"FILLING" = "FILLING";
+"TAP A PHOTO BELOW" = "TAP A PHOTO BELOW";
+"%@ DAYS APART · TAP A PHOTO BELOW" = "%@ DAYS APART · TAP A PHOTO BELOW";
+"SAME DAY · TAP EITHER TO SWAP" = "SAME DAY · TAP EITHER TO SWAP";
+"Same joint, same distance. Tap a thumbnail to load it into the selected side." = "Same joint, same distance. Tap a thumbnail to load it into the selected side.";
+"No photos yet" = "No photos yet";
+"Attach photos to an entry when you log a flare — they will line up here so you can see swelling change side by side." = "Attach photos to an entry when you log a flare — they will line up here so you can see swelling change side by side.";
+"Compare" = "Compare";
+
+/* ---------- 关于 ---------- */
+"About & Privacy" = "About & Privacy";
+"All entries and photos stay on this device. Nothing is ever uploaded." = "All entries and photos stay on this device. Nothing is ever uploaded.";
+"What HyperLog is for" = "What HyperLog is for";
+"A simple journal for hypermobile joints — log pain, flexibility changes, subluxations or dislocations with photos and notes. Entries group themselves by joint so patterns jump out. Perfect to show your physio or rheumatologist." = "A simple journal for hypermobile joints — log pain, flexibility changes, subluxations or dislocations with photos and notes. Entries group themselves by joint so patterns jump out. Perfect to show your physio or rheumatologist.";
+"Not a medical device" = "Not a medical device";
+"HyperLog records what you experience. It does not diagnose any condition (including Ehlers-Danlos syndromes or generalized joint hypermobility). Consult a healthcare professional for medical concerns." = "HyperLog records what you experience. It does not diagnose any condition (including Ehlers-Danlos syndromes or generalized joint hypermobility). Consult a healthcare professional for medical concerns.";
+"Privacy" = "Privacy";
+"No account, no network, no analytics, no ads.\nPhotos are stored inside the app's own storage.\nNothing leaves the app unless you choose to share it." = "No account, no network, no analytics, no ads.\nPhotos are stored inside the app's own storage.\nNothing leaves the app unless you choose to share it.";
+
+/* ---------- 反馈 ---------- */
+"Tell us what you think" = "Tell us what you think";
+"What works, what doesn't, what you wish existed — the developer reads every message." = "What works, what doesn't, what you wish existed — the developer reads every message.";
+"Send to developer" = "Send to developer";
+"No mail account on this device — send feedback to:" = "No mail account on this device — send feedback to:";
+"Sorry for any trouble! Please tell the developer what's not working — it will be fixed as soon as possible. New feature ideas are also very welcome, so the app can serve you better." = "Sorry for any trouble! Please tell the developer what's not working — it will be fixed as soon as possible. New feature ideas are also very welcome, so the app can serve you better.";
+"Email the Developer" = "Email the Developer";
+"No system Mail account on this phone, so the draft can't open here." = "No system Mail account on this phone, so the draft can't open here.";
+"Your feedback has been copied. Send it from any mail app (Gmail / Outlook) to:" = "Your feedback has been copied. Send it from any mail app (Gmail / Outlook) to:";
+"Long-press the address above to copy it." = "Long-press the address above to copy it.";
+
+/* ---------- PDF ---------- */
+"HyperLog Joint Episode Report" = "HyperLog Joint Episode Report";
+"Episodes per area" = "Episodes per area";
+"Daily trend" = "Daily trend";
+"Episode details" = "Episode details";
+"Latest Beighton: %@" = "Latest Beighton: %@";
+"Range: %@ · %@ episodes · Severe %@ · Hospital: %@" = "Range: %@ · %@ episodes · Severe %@ · Hospital: %@";
+"Triggers: %@" = "Triggers: %@";
+"Notes: %@" = "Notes: %@";
+"Beighton: %@" = "Beighton: %@";
+"Last 7 days" = "Last 7 days";
+"Last 30 days" = "Last 30 days";
