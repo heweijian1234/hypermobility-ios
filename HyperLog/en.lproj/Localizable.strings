@@ -39,7 +39,7 @@
 "Now" = "Now";
 "AREA" = "AREA";
 "HOW MUCH" = "HOW MUCH";
-"NOTE — OPTIONAL" = "NOTE — OPTIONAL";
+"REASON" = "REASON";
 "Severe = it slipped out or dislocated." = "Severe = it slipped out or dislocated.";
 "Reaching for a box overhead." = "Reaching for a box overhead.";
 "Add details" = "Add details";
@@ -188,3 +188,19 @@
 "Beighton: %@" = "Beighton: %@";
 "Last 7 days" = "Last 7 days";
 "Last 30 days" = "Last 30 days";
+
+/* ---------- 测试数据（上架前 showsTestTools=false 可整块删除） ---------- */
+"Test data" = "Test data";
+"For checking how the charts look. Each tap adds one random entry and moves the date back one day — not for real records." = "For checking how the charts look. Each tap adds one random entry and moves the date back one day — not for real records.";
+"TOTAL ENTRIES" = "TOTAL ENTRIES";
+"Next entry: %@" = "Next entry: %@";
+"Add one day" = "Add one day";
+"Add 7 days" = "Add 7 days";
+"Add on a specific date" = "Add on a specific date";
+"Add" = "Add";
+"Clear all entries" = "Clear all entries";
+"Delete all entries?" = "Delete all entries?";
+"This cannot be undone." = "This cannot be undone.";
+
+/* ---------- 首页柱子点选 ---------- */
+"%@ flares" = "%@ flares";

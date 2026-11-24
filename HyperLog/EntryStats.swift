@@ -59,4 +59,24 @@ enum EntryStats {
         guard idx >= 0 && idx < letters.count else { return "" }
         return letters[idx]
     }
+
+    /// 某一天的概况（点首页柱状时用）：当天条数 + 涉及部位（去重、保持出现顺序）
+    static func summary(for day: Date, in entries: [JointEntry]) -> (count: Int, areas: [String]) {
+        let cal = Calendar.current
+        let sameDay = entries.filter { cal.isDate($0.date, inSameDayAs: day) }
+        var seen = Set<String>()
+        var areas: [String] = []
+        for e in sortedByDate(sameDay) {
+            let label = EntryStore.displayPart(e.bodyPart)
+            if !seen.contains(label) {
+                seen.insert(label)
+                areas.append(label)
+            }
+        }
+        return (sameDay.count, areas)
+    }
+
+    private static func sortedByDate(_ entries: [JointEntry]) -> [JointEntry] {
+        entries.sorted { $0.date < $1.date }
+    }
 }

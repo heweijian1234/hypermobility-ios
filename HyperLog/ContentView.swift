@@ -18,6 +18,11 @@ struct ContentView: View {
     @State private var goReport = false
     @State private var goPhotos = false
     @State private var goFeedback = false
+    @State private var goTest = false
+    @State private var selectedDay: Date?
+
+    /// 测试数据入口：上架前改成 false 即从菜单消失（逻辑与页面都不用删）
+    private let showsTestTools = true
 
     var body: some View {
         NavigationStack {
@@ -52,6 +57,12 @@ struct ContentView: View {
                         Button { goFeedback = true } label: {
                             Label("Feedback", systemImage: "paperplane")
                         }
+                        if showsTestTools {
+                            Divider()
+                            Button { goTest = true } label: {
+                                Label("Test data", systemImage: "wrench.and.screwdriver")
+                            }
+                        }
                     } label: {
                         Image(systemName: "ellipsis.circle")
                     }
@@ -62,6 +73,9 @@ struct ContentView: View {
             .navigationDestination(isPresented: $goReport) { DoctorReportView() }
             .navigationDestination(isPresented: $goPhotos) { PhotoCompareView() }
             .navigationDestination(isPresented: $goFeedback) { FeedbackView() }
+            .navigationDestination(isPresented: $goTest) {
+                TestDataView { entries = EntryStore.load() }
+            }
             .sheet(isPresented: $showCapture, onDismiss: handleCaptureDismiss) {
                 QuickCaptureView(
                     lastPart: entries.first?.bodyPart ?? "knee",
@@ -155,30 +169,8 @@ struct ContentView: View {
                 .frame(height: 1)
                 .padding(.top, 12)
 
-            HStack(alignment: .center, spacing: 6) {
-                HStack(alignment: .firstTextBaseline, spacing: 5) {
-                    Text("\(weekTotal)")
-                        .font(Theme.serif(24))
-                        .foregroundColor(Theme.ink)
-                    Text("flares")
-                        .font(Theme.ui(11))
-                        .foregroundColor(Theme.ink2)
-                }
-                Rectangle()
-                    .fill(Theme.hair)
-                    .frame(width: 1, height: 11)
-                    .padding(.horizontal, 2)
-                Text(topAreaText)
-                    .font(Theme.ui(10.5))
-                    .foregroundColor(Theme.ink2)
-                    .lineLimit(1)
-                Spacer(minLength: 4)
-                Text(deltaText)
-                    .font(Theme.mono(10, .bold))
-                    .foregroundColor(weekDelta == 0 ? Theme.ink3 : Theme.severityColor(2))
-                    .lineLimit(1)
-            }
-            .padding(.top, 11)
+            weekFooter
+                .padding(.top, 11)
         }
         .padding(14)
         .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.cardRadius))
@@ -188,25 +180,102 @@ struct ContentView: View {
         )
     }
 
+    /// 未选日期 = 本周汇总；点了柱子 = 那一天的发作详情
+    @ViewBuilder
+    private var weekFooter: some View {
+        if let day = selectedDay {
+            dayDetail(day)
+        } else {
+            weekSummary
+        }
+    }
+
+    private var weekSummary: some View {
+        HStack(alignment: .center, spacing: 6) {
+            HStack(alignment: .firstTextBaseline, spacing: 5) {
+                Text("\(weekTotal)")
+                    .font(Theme.serif(24))
+                    .foregroundColor(Theme.ink)
+                Text("flares")
+                    .font(Theme.ui(11))
+                    .foregroundColor(Theme.ink2)
+            }
+            Rectangle()
+                .fill(Theme.hair)
+                .frame(width: 1, height: 11)
+                .padding(.horizontal, 2)
+            Text(topAreaText)
+                .font(Theme.ui(10.5))
+                .foregroundColor(Theme.ink2)
+                .lineLimit(1)
+            Spacer(minLength: 4)
+            Text(deltaText)
+                .font(Theme.mono(10, .bold))
+                .foregroundColor(weekDelta == 0 ? Theme.ink3 : Theme.severityColor(2))
+                .lineLimit(1)
+        }
+    }
+
+    private func dayDetail(_ day: Date) -> some View {
+        let info = EntryStats.summary(for: day, in: entries)
+        return HStack(alignment: .center, spacing: 6) {
+            Text(day.formatted(.dateTime.month(.abbreviated).day()))
+                .font(Theme.ui(11, .semibold))
+                .foregroundColor(Theme.ink)
+            Text(verbatim: "·")
+                .font(Theme.ui(11))
+                .foregroundColor(Theme.ink3)
+            Text(L("%@ flares", "\(info.count)"))
+                .font(Theme.ui(10.5))
+                .foregroundColor(info.count == 0 ? Theme.ink3 : Theme.ink2)
+            if !info.areas.isEmpty {
+                Text(info.areas.joined(separator: ", "))
+                    .font(Theme.ui(10.5))
+                    .foregroundColor(Theme.ink3)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 4)
+            Button {
+                selectedDay = nil
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 13))
+                    .foregroundColor(Theme.ink3)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
     private func dayColumn(_ bucket: (date: Date, count: Int, peak: Int)) -> some View {
         let isToday = Calendar.current.isDateInToday(bucket.date)
+        let isSelected = selectedDay.map { Calendar.current.isDate($0, inSameDayAs: bucket.date) } ?? false
         let height = bucket.count == 0
             ? 5.0
             : min(14.0 + Double(bucket.peak) * 7.0 + Double(min(bucket.count, 3)) * 4.0, 40.0)
         let fill = bucket.count == 0 ? Theme.hair : Theme.severityColor(max(bucket.peak, 0))
-        return VStack(spacing: 5) {
-            Spacer(minLength: 0)
-            RoundedRectangle(cornerRadius: 2.5)
-                .fill(fill)
-                .frame(height: height)
-            Text(EntryStats.weekdayLetter(bucket.date))
-                .font(Theme.mono(9, isToday ? .bold : .regular))
-                .foregroundColor(isToday ? Theme.paper : Theme.ink3)
-                .padding(.horizontal, 4)
-                .padding(.vertical, 1)
-                .background(isToday ? Theme.ink : Color.clear, in: RoundedRectangle(cornerRadius: 3))
+        return Button {
+            selectedDay = isSelected ? nil : bucket.date
+        } label: {
+            VStack(spacing: 5) {
+                Spacer(minLength: 0)
+                RoundedRectangle(cornerRadius: 2.5)
+                    .fill(fill)
+                    .frame(height: height)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 2.5)
+                            .stroke(isSelected ? Theme.ink : Color.clear, lineWidth: 1.6)
+                    )
+                Text(EntryStats.weekdayLetter(bucket.date))
+                    .font(Theme.mono(9, isToday ? .bold : .regular))
+                    .foregroundColor(isToday ? Theme.paper : (isSelected ? Theme.ink : Theme.ink3))
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1)
+                    .background(isToday ? Theme.ink : Color.clear, in: RoundedRectangle(cornerRadius: 3))
+            }
+            .frame(maxWidth: .infinity, maxHeight: 62, alignment: .bottom)
+            .contentShape(Rectangle())
         }
-        .frame(maxWidth: .infinity, maxHeight: 62, alignment: .bottom)
+        .buttonStyle(.plain)
     }
 
     private var sectionHeadRow: some View {

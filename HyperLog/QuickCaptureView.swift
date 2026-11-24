@@ -57,7 +57,7 @@ struct QuickCaptureView: View {
                 .foregroundColor(Theme.ink3)
                 .padding(.top, 6)
 
-            label("NOTE — OPTIONAL")
+            label("REASON")
             TextField("Reaching for a box overhead.", text: $note, axis: .vertical)
                 .lineLimit(1...2)
                 .font(Theme.ui(12))

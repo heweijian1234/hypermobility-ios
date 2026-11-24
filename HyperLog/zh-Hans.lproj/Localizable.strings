@@ -39,7 +39,7 @@
 "Now" = "现在";
 "AREA" = "部位";
 "HOW MUCH" = "程度";
-"NOTE — OPTIONAL" = "备注 — 可选";
+"REASON" = "原因";
 "Severe = it slipped out or dislocated." = "严重 = 脱位或半脱位。";
 "Reaching for a box overhead." = "抬手够高处的箱子。";
 "Add details" = "补充细节";
@@ -188,3 +188,19 @@
 "Beighton: %@" = "Beighton：%@";
 "Last 7 days" = "最近 7 天";
 "Last 30 days" = "最近 30 天";
+
+/* ---------- 测试数据（上架前 showsTestTools=false 可整块删除） ---------- */
+"Test data" = "测试数据";
+"For checking how the charts look. Each tap adds one random entry and moves the date back one day — not for real records." = "用来快速看图表效果：每点一次随机加一条记录，日期往前推一天。不是真实记录。";
+"TOTAL ENTRIES" = "记录总数";
+"Next entry: %@" = "下一次加在：%@";
+"Add one day" = "加一天";
+"Add 7 days" = "加 7 天";
+"Add on a specific date" = "指定日期加一条";
+"Add" = "添加";
+"Clear all entries" = "清空全部记录";
+"Delete all entries?" = "删除全部记录？";
+"This cannot be undone." = "此操作不可撤销。";
+
+/* ---------- 首页柱子点选 ---------- */
+"%@ flares" = "%@ 次";

@@ -68,3 +68,16 @@ enum Theme {
     static let cardRadius: CGFloat = 14
     static let hairline: CGFloat = 1
 }
+
+extension View {
+    /// 纸感卡片容器（评审稿里的 .card）——统一圆角/描边/内边距，全 App 唯一来源
+    func paperCard() -> some View {
+        self
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12).stroke(Theme.hair, lineWidth: 1)
+            )
+    }
+}

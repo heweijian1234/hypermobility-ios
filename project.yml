@@ -38,7 +38,8 @@ targets:
         # 写在 settings 里的 INFOPLIST_KEY_UIUserInterfaceStyle 不生效——v0.4.0 踩过。
         UIUserInterfaceStyle: Light
         UILaunchScreen:
-          UIColorName: ""
+          # 启动界面用纸色（= Theme.paper #F6F3EC），消掉启动瞬间的白闪
+          UIColorName: LaunchBackground
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         # 照片库权限（选图附加到关节记录）
@@ -51,7 +52,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.zeronelabs.hyperlog
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        MARKETING_VERSION: "0.5.0"
+        MARKETING_VERSION: "0.5.1"
         CURRENT_PROJECT_VERSION: "1"
 
 schemes:

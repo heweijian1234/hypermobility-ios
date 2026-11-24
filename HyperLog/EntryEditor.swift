@@ -106,7 +106,7 @@ struct EntryEditor: View {
                     .padding(.top, 2)
             }
         }
-        .card()
+        .paperCard()
     }
 
     private func areaChip(_ key: String, _ text: String) -> some View {
@@ -162,7 +162,7 @@ struct EntryEditor: View {
                 .font(Theme.ui(10))
                 .foregroundColor(Theme.ink3)
         }
-        .card()
+        .paperCard()
     }
 
     // MARK: 细节
@@ -178,7 +178,7 @@ struct EntryEditor: View {
             divider
             notesRow
         }
-        .card()
+        .paperCard()
     }
 
     private var durationRow: some View {
@@ -269,7 +269,7 @@ struct EntryEditor: View {
             }
             photoGrid
         }
-        .card()
+        .paperCard()
     }
 
     private func pillLabel(_ text: String, _ icon: String) -> some View {
@@ -541,16 +541,3 @@ struct BeightonEditorView: View {
     }
 }
 
-// MARK: - 卡片样式
-
-private extension View {
-    func card() -> some View {
-        self
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12).stroke(Theme.hair, lineWidth: 1)
-            )
-    }
-}
