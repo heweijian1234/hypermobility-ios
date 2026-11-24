@@ -18,12 +18,8 @@ struct ContentView: View {
     @State private var goReport = false
     @State private var goPhotos = false
     @State private var goFeedback = false
-    @State private var goTest = false
     @State private var selectedDay: Date?
     @State private var showAll = false
-
-    /// 测试数据入口：上架前改成 false 即从菜单消失（逻辑与页面都不用删）
-    private let showsTestTools = true
 
     var body: some View {
         NavigationStack {
@@ -58,12 +54,6 @@ struct ContentView: View {
                         Button { goFeedback = true } label: {
                             Label("Feedback", systemImage: "paperplane")
                         }
-                        if showsTestTools {
-                            Divider()
-                            Button { goTest = true } label: {
-                                Label("Test data", systemImage: "wrench.and.screwdriver")
-                            }
-                        }
                     } label: {
                         Image(systemName: "ellipsis.circle")
                     }
@@ -74,9 +64,6 @@ struct ContentView: View {
             .navigationDestination(isPresented: $goReport) { DoctorReportView() }
             .navigationDestination(isPresented: $goPhotos) { PhotoCompareView() }
             .navigationDestination(isPresented: $goFeedback) { FeedbackView() }
-            .navigationDestination(isPresented: $goTest) {
-                TestDataView { entries = EntryStore.load() }
-            }
             .sheet(isPresented: $showCapture, onDismiss: handleCaptureDismiss) {
                 QuickCaptureView(
                     lastPart: entries.first?.bodyPart ?? "knee",
