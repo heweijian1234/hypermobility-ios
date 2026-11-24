@@ -271,14 +271,26 @@ struct DoctorReportView: View {
             }
             .buttonStyle(.plain)
 
-            Button {
-                if let url = makePDF() { share(url) }
+            Menu {
+                Button {
+                    if let url = makeCSV() { share(url) }
+                } label: {
+                    Label("Spreadsheet (CSV)", systemImage: "tablecells")
+                }
+                Button {
+                    if let url = makeText() { share(url) }
+                } label: {
+                    Label("Plain text", systemImage: "doc.plaintext")
+                }
             } label: {
-                Text("Share PDF another way")
-                    .font(Theme.ui(12, .semibold))
-                    .foregroundColor(Theme.accent)
+                HStack(spacing: 4) {
+                    Text("Other formats")
+                        .font(Theme.ui(12, .semibold))
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 9, weight: .bold))
+                }
+                .foregroundColor(Theme.accent)
             }
-            .buttonStyle(.plain)
 
             Text("Summary, per-area chart, daily trend, latest Beighton score and the full episode list — photos included.")
                 .font(Theme.ui(10))
@@ -311,28 +323,94 @@ struct DoctorReportView: View {
 
     // MARK: - PDF（逻辑未改，仅换色）
 
-    private var textReport: String {
-        var lines = ["HyperLog Joint Episode Report"]
-        lines.append("Range: \(range == 0 ? "last 7 days" : range == 1 ? "last 30 days" : "All") ·  \(ranged.count)  episodes")
-        lines.append("Severe episodes (subluxation/dislocation)：\(ranged.filter { $0.severity >= 3 }.count)")
-        lines.append("Hospital repositioning：\(ranged.filter { $0.treatment == "hospital" }.count)")
+    // MARK: 其他格式（CSV / 纯文本）——与「发给医生」的 PDF 明确区分
+
+    private var pdfRangeText: String {
+        L(range == 0 ? "Last 7 days" : range == 1 ? "Last 30 days" : "All")
+    }
+
+    private func makeText() -> URL? {
+        var lines: [String] = []
+        lines.append(L("HyperLog Joint Episode Report"))
+        lines.append(L("Range: %@ · %@ episodes · Severe %@ · Hospital: %@",
+                       pdfRangeText, "\(ranged.count)", "\(severeCount)", "\(hospitalCount)"))
         lines.append("")
-        for g in EntryStore.grouped(ranged) {
-            lines.append("\(g.label): \(g.count)")
-            for e in g.items.prefix(50) {
-                var parts = [e.date.formatted(.dateTime.month().day().hour().minute())]
-                parts.append(e.severityLabel)
-                if !e.painDurationLabel.isEmpty { parts.append("pain: \(e.painDurationLabel)") }
+        for group in groups {
+            lines.append("\(group.label): \(group.count)")
+            for e in group.items {
+                var parts = [e.date.formatted(.dateTime.month().day().hour().minute()), e.severityLabel]
+                if !e.painDurationLabel.isEmpty { parts.append(e.painDurationLabel) }
                 if !e.treatmentLabel.isEmpty { parts.append(e.treatmentLabel) }
                 lines.append("  · " + parts.joined(separator: " · "))
+                if !e.triggers.isEmpty {
+                    let tr = e.triggers
+                        .compactMap { k in EntryStore.triggerOptions.first(where: { $0.key == k })?.label }
+                        .joined(separator: ", ")
+                    lines.append("    " + L("Triggers: %@", tr))
+                }
+                if !e.notes.isEmpty {
+                    lines.append("    " + L("Notes: %@", e.notes))
+                }
             }
         }
-        if let b = entries.compactMap(\.beighton).last {
+        if let b = ranged.compactMap(\.beighton).last {
             lines.append("")
-            lines.append("Latest Beighton: \(b)/9")
+            lines.append(L("Latest Beighton: %@", "\(b)/9"))
         }
-        lines.append("(Self-recorded with HyperLog — for reference, not a diagnosis.)")
-        return lines.joined(separator: "\n")
+        lines.append("")
+        lines.append(L("Self-recorded with HyperLog — for reference, not a diagnosis."))
+        return writeTemp(lines.joined(separator: "\n"), name: "HyperLog-Report.txt")
+    }
+
+    private func makeCSV() -> URL? {
+        let dateFmt = DateFormatter()
+        dateFmt.dateFormat = "yyyy-MM-dd"
+        let timeFmt = DateFormatter()
+        timeFmt.dateFormat = "HH:mm"
+
+        var rows: [String] = []
+        let header = [L("Date"), L("Time"), L("Area"), L("Severity"), L("Pain duration"),
+                      L("Treatment"), L("Triggers"), L("Beighton"), L("Photos"), L("Notes")]
+        rows.append(header.map(csvField).joined(separator: ","))
+
+        for e in ranged.sorted(by: { $0.date < $1.date }) {
+            let triggers = e.triggers
+                .compactMap { k in EntryStore.triggerOptions.first(where: { $0.key == k })?.label }
+                .joined(separator: " / ")
+            let cells = [
+                dateFmt.string(from: e.date),
+                timeFmt.string(from: e.date),
+                EntryStore.displayPart(e.bodyPart),
+                Theme.severityLabel(e.severity),
+                e.painDurationLabel,
+                e.treatmentLabel,
+                triggers,
+                e.beighton.map { "\($0)/9" } ?? "",
+                "\((e.photoFiles ?? []).count)",
+                e.notes
+            ]
+            rows.append(cells.map(csvField).joined(separator: ","))
+        }
+        // BOM：让 Excel 正确识别 UTF-8（中文不乱码）
+        let body = "\u{FEFF}" + rows.joined(separator: "\r\n")
+        return writeTemp(body, name: "HyperLog-Report.csv")
+    }
+
+    private func csvField(_ value: String) -> String {
+        if value.contains(",") || value.contains("\"") || value.contains("\n") || value.contains("\r") {
+            return "\"" + value.replacingOccurrences(of: "\"", with: "\"\"") + "\""
+        }
+        return value
+    }
+
+    private func writeTemp(_ content: String, name: String) -> URL? {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(name)
+        do {
+            try content.data(using: .utf8)?.write(to: url)
+            return url
+        } catch {
+            return nil
+        }
     }
 
     private func makePDF() -> URL? {
@@ -353,9 +431,8 @@ struct DoctorReportView: View {
             (L("HyperLog Joint Episode Report") as NSString).draw(
                 at: CGPoint(x: 40, y: 36),
                 withAttributes: [.font: UIFont.boldSystemFont(ofSize: 18), .foregroundColor: purple])
-            let rangeText = L(range == 0 ? "Last 7 days" : range == 1 ? "Last 30 days" : "All")
             let sub = L("Range: %@ · %@ episodes · Severe %@ · Hospital: %@",
-                        rangeText,
+                        pdfRangeText,
                         "\(ranged.count)",
                         "\(ranged.filter { $0.severity >= 3 }.count)",
                         "\(ranged.filter { $0.treatment == "hospital" }.count)")

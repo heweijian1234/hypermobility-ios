@@ -10,6 +10,7 @@ struct PhotoItem: Identifiable {
     let file: String
     let date: Date
     let severity: Int
+    let part: String
 }
 
 struct PhotoCompareView: View {
@@ -18,6 +19,7 @@ struct PhotoCompareView: View {
     @State private var slot = 1        // 0 = THEN, 1 = NOW
     @State private var thenID: String?
     @State private var nowID: String?
+    @State private var viewerItem: PhotoItem?
 
     private var partsWithPhotos: [(key: String, label: String)] {
         let keys = Set(entries.filter { !($0.photoFiles ?? []).isEmpty }.map { $0.bodyPart })
@@ -28,7 +30,7 @@ struct PhotoCompareView: View {
         var result: [PhotoItem] = []
         for entry in entries where entry.bodyPart == part {
             for file in (entry.photoFiles ?? []) {
-                result.append(PhotoItem(id: file, entryID: entry.id, file: file, date: entry.date, severity: entry.severity))
+                result.append(PhotoItem(id: file, entryID: entry.id, file: file, date: entry.date, severity: entry.severity, part: entry.bodyPart))
             }
         }
         return result.sorted { $0.date < $1.date }
@@ -65,6 +67,9 @@ struct PhotoCompareView: View {
         .onAppear {
             if part.isEmpty { part = partsWithPhotos.first?.key ?? "knee" }
         }
+        .fullScreenCover(item: $viewerItem) { item in
+            PhotoViewer(item: item)
+        }
     }
 
     // MARK: 头
@@ -85,28 +90,27 @@ struct PhotoCompareView: View {
     }
 
     private var areaChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                ForEach(partsWithPhotos, id: \.key) { item in
-                    let selected = part == item.key
-                    Button {
-                        part = item.key
-                        thenID = nil
-                        nowID = nil
-                    } label: {
-                        Text(item.label)
-                            .font(Theme.ui(11.5, selected ? .semibold : .medium))
-                            .foregroundColor(selected ? .white : Theme.ink2)
-                            .padding(.horizontal, 13)
-                            .frame(height: 32)
-                            .background(Capsule().fill(selected ? Theme.accent : Theme.surface))
-                            .overlay(Capsule().stroke(selected ? Theme.accent : Theme.hair, lineWidth: 1.2))
-                    }
-                    .buttonStyle(.plain)
+        FlowLayout(spacing: 6, lineSpacing: 6) {
+            ForEach(partsWithPhotos, id: \.key) { item in
+                let selected = part == item.key
+                Button {
+                    part = item.key
+                    thenID = nil
+                    nowID = nil
+                } label: {
+                    Text(item.label)
+                        .font(Theme.ui(11.5, selected ? .semibold : .medium))
+                        .foregroundColor(selected ? .white : Theme.ink2)
+                        .lineLimit(1)
+                        .padding(.horizontal, 13)
+                        .frame(height: 32)
+                        .background(Capsule().fill(selected ? Theme.accent : Theme.surface))
+                        .overlay(Capsule().stroke(selected ? Theme.accent : Theme.hair, lineWidth: 1.2))
                 }
+                .buttonStyle(.plain)
             }
-            .padding(.horizontal, 18)
         }
+        .padding(.horizontal, 18)
         .padding(.bottom, 14)
     }
 
@@ -152,6 +156,19 @@ struct PhotoCompareView: View {
                 .background(Theme.surface.opacity(0.94), in: RoundedRectangle(cornerRadius: 4))
                 .padding(7)
 
+            if item != nil {
+                HStack {
+                    Spacer()
+                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(5)
+                        .background(Circle().fill(Color.black.opacity(0.42)))
+                        .padding(7)
+                }
+                .frame(maxHeight: .infinity, alignment: .top)
+            }
+
             if let item {
                 VStack {
                     Spacer()
@@ -169,6 +186,10 @@ struct PhotoCompareView: View {
         .frame(height: 196)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.hair, lineWidth: 1))
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if let item { viewerItem = item }
+        }
     }
 
     private var gapText: String {
@@ -252,7 +273,7 @@ struct PhotoCompareView: View {
     }
 
     private var caption: some View {
-        Text("Same joint, same distance. Tap a thumbnail to load it into the selected side.")
+        Text("Same joint, same distance. Tap a thumbnail to load it into a side, or tap a large photo to zoom.")
             .font(Theme.ui(10.5))
             .foregroundColor(Theme.ink2)
             .lineSpacing(2)
@@ -274,5 +295,77 @@ struct PhotoCompareView: View {
         }
         .padding(.horizontal, 18)
         .padding(.top, 8)
+    }
+}
+
+// MARK: - 大图查看（双指缩放 / 双击放大）
+
+struct PhotoViewer: View {
+    let item: PhotoItem
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var scale: CGFloat = 1
+    @State private var lastScale: CGFloat = 1
+
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+
+            if let img = UIImage(contentsOfFile: EntryStore.photoURL(item.file).path) {
+                Image(uiImage: img)
+                    .resizable()
+                    .scaledToFit()
+                    .scaleEffect(scale)
+                    .gesture(
+                        MagnificationGesture()
+                            .onChanged { value in
+                                scale = min(max(lastScale * value, 1), 6)
+                            }
+                            .onEnded { _ in
+                                lastScale = scale
+                            }
+                    )
+                    .onTapGesture(count: 2) {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            scale = scale > 1 ? 1 : 2.5
+                            lastScale = scale
+                        }
+                    }
+            }
+
+            VStack {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(EntryStore.displayPart(item.part))
+                            .font(Theme.ui(13, .semibold))
+                            .foregroundColor(.white)
+                        Text(item.date.formatted(.dateTime.year().month(.abbreviated).day().hour().minute()))
+                            .font(Theme.ui(10.5))
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                    Spacer()
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(width: 34, height: 34)
+                            .background(Circle().fill(Color.white.opacity(0.18)))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 18)
+                .padding(.top, 8)
+
+                Spacer()
+
+                Text("Double-tap or pinch to zoom")
+                    .font(Theme.ui(10.5))
+                    .foregroundColor(.white.opacity(0.55))
+                    .padding(.bottom, 26)
+            }
+        }
+        .statusBarHidden(true)
     }
 }

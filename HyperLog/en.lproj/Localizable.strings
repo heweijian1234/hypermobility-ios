@@ -139,7 +139,6 @@
 "even vs prev." = "even vs prev.";
 "TODAY" = "TODAY";
 "Send to doctor" = "Send to doctor";
-"Share PDF another way" = "Share PDF another way";
 "Summary, per-area chart, daily trend, latest Beighton score and the full episode list — photos included." = "Summary, per-area chart, daily trend, latest Beighton score and the full episode list — photos included.";
 
 /* ---------- 照片对比 ---------- */
@@ -150,7 +149,7 @@
 "TAP A PHOTO BELOW" = "TAP A PHOTO BELOW";
 "%@ DAYS APART · TAP A PHOTO BELOW" = "%@ DAYS APART · TAP A PHOTO BELOW";
 "SAME DAY · TAP EITHER TO SWAP" = "SAME DAY · TAP EITHER TO SWAP";
-"Same joint, same distance. Tap a thumbnail to load it into the selected side." = "Same joint, same distance. Tap a thumbnail to load it into the selected side.";
+"Same joint, same distance. Tap a thumbnail to load it into a side, or tap a large photo to zoom." = "Same joint, same distance. Tap a thumbnail to load it into a side, or tap a large photo to zoom.";
 "No photos yet" = "No photos yet";
 "Attach photos to an entry when you log a flare — they will line up here so you can see swelling change side by side." = "Attach photos to an entry when you log a flare — they will line up here so you can see swelling change side by side.";
 "Compare" = "Compare";
@@ -204,3 +203,23 @@
 
 /* ---------- 首页柱子点选 ---------- */
 "%@ flares" = "%@ flares";
+
+/* ---------- 首页：7 天窗口 ---------- */
+"Show %@ earlier entries" = "Show %@ earlier entries";
+"Show recent only" = "Show recent only";
+"ALL ENTRIES" = "ALL ENTRIES";
+
+/* ---------- 报告：其他格式 ---------- */
+"Other formats" = "Other formats";
+"Spreadsheet (CSV)" = "Spreadsheet (CSV)";
+"Plain text" = "Plain text";
+"Date" = "Date";
+"Time" = "Time";
+"Area" = "Area";
+"Severity" = "Severity";
+"Photos" = "Photos";
+"Beighton" = "Beighton";
+"Self-recorded with HyperLog — for reference, not a diagnosis." = "Self-recorded with HyperLog — for reference, not a diagnosis.";
+
+/* ---------- 照片大图 ---------- */
+"Double-tap or pinch to zoom" = "Double-tap or pinch to zoom";

@@ -20,6 +20,7 @@ struct ContentView: View {
     @State private var goFeedback = false
     @State private var goTest = false
     @State private var selectedDay: Date?
+    @State private var showAll = false
 
     /// 测试数据入口：上架前改成 false 即从菜单消失（逻辑与页面都不用删）
     private let showsTestTools = true
@@ -106,6 +107,7 @@ struct ContentView: View {
             weekRow
             sectionHeadRow
             rowsContent
+            earlierRow
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
@@ -280,7 +282,7 @@ struct ContentView: View {
 
     private var sectionHeadRow: some View {
         HStack {
-            Text("RECENT")
+            Text(listSectionKey)
                 .font(Theme.mono(9.5))
                 .foregroundColor(Theme.ink3)
             Spacer()
@@ -307,16 +309,43 @@ struct ContentView: View {
     @ViewBuilder
     private var rowsContent: some View {
         if grouping {
-            ForEach(EntryStore.grouped(entries), id: \.part) { group in
+            ForEach(EntryStore.grouped(displayed), id: \.part) { group in
                 groupLabel(group.label, group.count)
                 ForEach(group.items) { entry in
                     row(entry)
                 }
             }
         } else {
-            ForEach(entries) { entry in
+            ForEach(displayed) { entry in
                 row(entry)
             }
+        }
+    }
+
+    /// 记录变长后只列最近 7 天；更早的折成一行，点开再看
+    @ViewBuilder
+    private var earlierRow: some View {
+        if hasEarlierEntry {
+            Button {
+                showAll.toggle()
+            } label: {
+                HStack {
+                    Text(showAll
+                         ? L("Show recent only")
+                         : L("Show %@ earlier entries", "\(earlierCount)"))
+                        .font(Theme.ui(11.5, .medium))
+                    Spacer(minLength: 6)
+                    Image(systemName: showAll ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 10, weight: .semibold))
+                }
+                .foregroundColor(Theme.accent)
+                .padding(.vertical, 13)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .listRowInsets(EdgeInsets(top: 0, leading: 18, bottom: 0, trailing: 18))
+            .listRowSeparator(.hidden)
+            .listRowBackground(Theme.paper)
         }
     }
 
@@ -429,6 +458,26 @@ struct ContentView: View {
 
     // MARK: 数据
 
+    // MARK: 近 7 天窗口
+
+    private var recentWindow: [JointEntry] {
+        let cal = Calendar.current
+        guard let start = cal.date(byAdding: .day, value: -6, to: cal.startOfDay(for: Date())) else {
+            return entries
+        }
+        return entries.filter { $0.date >= start }
+    }
+    private var displayed: [JointEntry] {
+        if showAll || recentWindow.isEmpty { return entries }
+        return recentWindow
+    }
+    private var hasEarlierEntry: Bool {
+        !recentWindow.isEmpty && entries.count > recentWindow.count
+    }
+    private var earlierCount: Int {
+        max(entries.count - recentWindow.count, 0)
+    }
+
     private var weekBuckets: [(date: Date, count: Int, peak: Int)] {
         EntryStats.dailyBuckets(entries, days: 7)
     }
@@ -440,6 +489,9 @@ struct ContentView: View {
     }
     private var groupingModeKey: LocalizedStringKey {
         grouping ? "By time" : "By area"
+    }
+    private var listSectionKey: LocalizedStringKey {
+        showAll ? "ALL ENTRIES" : "RECENT"
     }
     private var deltaText: String {
         if weekDelta == 0 { return L("even") }

@@ -139,7 +139,6 @@
 "even vs prev." = "与上期持平";
 "TODAY" = "今天";
 "Send to doctor" = "发给医生";
-"Share PDF another way" = "用其他方式分享 PDF";
 "Summary, per-area chart, daily trend, latest Beighton score and the full episode list — photos included." = "包含汇总、部位图表、每日趋势、最近一次 Beighton 分值和完整发作清单——含照片。";
 
 /* ---------- 照片对比 ---------- */
@@ -150,7 +149,7 @@
 "TAP A PHOTO BELOW" = "点下方照片";
 "%@ DAYS APART · TAP A PHOTO BELOW" = "相隔 %@ 天 · 点下方照片";
 "SAME DAY · TAP EITHER TO SWAP" = "同一天 · 点任一张换位";
-"Same joint, same distance. Tap a thumbnail to load it into the selected side." = "同一关节、同一距离。点缩略图载入选中的一侧。";
+"Same joint, same distance. Tap a thumbnail to load it into a side, or tap a large photo to zoom." = "同一关节、同一距离。点缩略图载入选中的一侧，点大图可放大。";
 "No photos yet" = "还没有照片";
 "Attach photos to an entry when you log a flare — they will line up here so you can see swelling change side by side." = "记录发作时给这一次附上照片——它们会在这里并排排好，肿胀变化一眼能看出来。";
 "Compare" = "对比";
@@ -204,3 +203,23 @@
 
 /* ---------- 首页柱子点选 ---------- */
 "%@ flares" = "%@ 次";
+
+/* ---------- 首页：7 天窗口 ---------- */
+"Show %@ earlier entries" = "显示更早的 %@ 条记录";
+"Show recent only" = "只看最近 7 天";
+"ALL ENTRIES" = "全部记录";
+
+/* ---------- 报告：其他格式 ---------- */
+"Other formats" = "其他格式";
+"Spreadsheet (CSV)" = "表格（CSV）";
+"Plain text" = "纯文本";
+"Date" = "日期";
+"Time" = "时间";
+"Area" = "部位";
+"Severity" = "程度";
+"Photos" = "照片";
+"Beighton" = "Beighton";
+"Self-recorded with HyperLog — for reference, not a diagnosis." = "由 HyperLog 自记 —— 供参考，不作为诊断。";
+
+/* ---------- 照片大图 ---------- */
+"Double-tap or pinch to zoom" = "双击或双指放大";
