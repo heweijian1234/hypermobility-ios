@@ -20,6 +20,9 @@ struct PhotoCompareView: View {
     @State private var thenID: String?
     @State private var nowID: String?
     @State private var viewerItem: PhotoItem?
+    @State private var showPaywall = false
+
+    @EnvironmentObject private var pro: ProStore
 
     private var partsWithPhotos: [(key: String, label: String)] {
         let keys = Set(entries.filter { !($0.photoFiles ?? []).isEmpty }.map { $0.bodyPart })
@@ -47,7 +50,9 @@ struct PhotoCompareView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 header
-                if partsWithPhotos.isEmpty {
+                if !pro.isPro {
+                    lockedBlock
+                } else if partsWithPhotos.isEmpty {
                     emptyState
                 } else {
                     areaChips
@@ -70,6 +75,41 @@ struct PhotoCompareView: View {
         .fullScreenCover(item: $viewerItem) { item in
             PhotoViewer(item: item)
         }
+        .sheet(isPresented: $showPaywall) { PaywallView().environmentObject(pro) }
+    }
+
+    // MARK: Pro 未解锁
+
+    private var lockedBlock: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            ProBadge()
+            Text("Side-by-side photo comparison")
+                .font(Theme.serif(22))
+                .foregroundColor(Theme.ink)
+            Text("Put two photos of the same joint next to each other and watch swelling change over time. Part of Pro.")
+                .font(Theme.ui(12.5))
+                .foregroundColor(Theme.ink2)
+                .lineSpacing(3)
+                .fixedSize(horizontal: false, vertical: true)
+            Button {
+                showPaywall = true
+            } label: {
+                HStack(spacing: 7) {
+                    Image(systemName: "lock.open.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                    Text("See what's included")
+                        .font(Theme.ui(13.5, .semibold))
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 18)
+                .frame(height: 46)
+                .background(RoundedRectangle(cornerRadius: 12).fill(Theme.accent))
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 4)
+        }
+        .padding(.horizontal, 18)
+        .padding(.top, 22)
     }
 
     // MARK: 头

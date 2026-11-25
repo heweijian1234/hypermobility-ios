@@ -209,3 +209,28 @@
 
 /* ---------- 照片大图 ---------- */
 "Double-tap or pinch to zoom" = "Double-tap or pinch to zoom";
+
+/* ---------- Pro / 全部记录 ---------- */
+"All records" = "All records";
+"All records (Pro)" = "All records (Pro)";
+"EVERY EPISODE" = "EVERY EPISODE";
+"records" = "records";
+"HyperLog Pro" = "HyperLog Pro";
+"Pay once. Keep it." = "Pay once. Keep it.";
+"Doctor report" = "Doctor report";
+"Export a PDF, spreadsheet (CSV) or plain text you can hand to a physio or rheumatologist." = "Export a PDF, spreadsheet (CSV) or plain text you can hand to a physio or rheumatologist.";
+"Photo comparison" = "Photo comparison";
+"Put two photos side by side and see swelling change over time." = "Put two photos side by side and see swelling change over time.";
+"Browse your entire history by month, not just the last 7 days." = "Browse your entire history by month, not just the last 7 days.";
+"Unlock for %@" = "Unlock for %@";
+"Restore purchase" = "Restore purchase";
+"One-time purchase, no subscription. Payment is charged to your Apple ID. Restore it any time on any device signed in with the same Apple ID." = "One-time purchase, no subscription. Payment is charged to your Apple ID. Restore it any time on any device signed in with the same Apple ID.";
+"Product is unavailable right now. Please try again in a moment." = "Product is unavailable right now. Please try again in a moment.";
+"The purchase could not be verified." = "The purchase could not be verified.";
+"The purchase is pending approval." = "The purchase is pending approval.";
+"No previous purchase was found for this Apple ID." = "No previous purchase was found for this Apple ID.";
+"Exporting is part of Pro" = "Exporting is part of Pro";
+"Side-by-side photo comparison" = "Side-by-side photo comparison";
+"Put two photos of the same joint next to each other and watch swelling change over time. Part of Pro." = "Put two photos of the same joint next to each other and watch swelling change over time. Part of Pro.";
+"See what's included" = "See what's included";
+"DRAFT" = "DRAFT";

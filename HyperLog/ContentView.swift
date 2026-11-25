@@ -20,6 +20,10 @@ struct ContentView: View {
     @State private var goFeedback = false
     @State private var selectedDay: Date?
     @State private var showAll = false
+    @State private var goAllRecords = false
+    @State private var showPaywall = false
+
+    @EnvironmentObject private var pro: ProStore
 
     var body: some View {
         NavigationStack {
@@ -50,6 +54,12 @@ struct ContentView: View {
                         Button { goPhotos = true } label: {
                             Label("Photo compare", systemImage: "photo.on.rectangle.angled")
                         }
+                        Button {
+                            if pro.isPro { goAllRecords = true } else { showPaywall = true }
+                        } label: {
+                            Label(pro.isPro ? L("All records") : L("All records (Pro)"),
+                                  systemImage: "list.bullet.rectangle")
+                        }
                         Divider()
                         Button { goFeedback = true } label: {
                             Label("Feedback", systemImage: "paperplane")
@@ -64,6 +74,8 @@ struct ContentView: View {
             .navigationDestination(isPresented: $goReport) { DoctorReportView() }
             .navigationDestination(isPresented: $goPhotos) { PhotoCompareView() }
             .navigationDestination(isPresented: $goFeedback) { FeedbackView() }
+            .navigationDestination(isPresented: $goAllRecords) { AllRecordsView() }
+            .sheet(isPresented: $showPaywall) { PaywallView().environmentObject(pro) }
             .sheet(isPresented: $showCapture, onDismiss: handleCaptureDismiss) {
                 QuickCaptureView(
                     lastPart: entries.first?.bodyPart ?? "knee",
@@ -547,20 +559,25 @@ struct EntryRow: View {
         HStack(alignment: .top, spacing: 11) {
             thumbnail
             VStack(alignment: .leading, spacing: 2) {
-                Text(EntryStore.displayPart(entry.bodyPart))
-                    .font(Theme.serif(17))
-                    .foregroundColor(Theme.ink)
-                    .lineLimit(1)
-                Text(metaLine)
+                HStack(spacing: 5) {
+                    Text(EntryStore.displayPart(entry.bodyPart))
+                        .font(Theme.serif(17))
+                        .foregroundColor(Theme.ink)
+                        .lineLimit(1)
+                    if entry.quick {
+                        Text("DRAFT")
+                            .font(.system(size: 8, weight: .heavy))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1.5)
+                            .background(Capsule().fill(Theme.severityColor(2)))
+                    }
+                }
+                // 只留时间：疼痛持续/处置/诱因/备注都要点进详情才看
+                Text(entry.date.formatted(.dateTime.month(.abbreviated).day().hour().minute()))
                     .font(Theme.ui(10.5, .medium))
                     .foregroundColor(Theme.ink2)
                     .lineLimit(1)
-                if !noteLine.isEmpty {
-                    Text(noteLine)
-                        .font(Theme.ui(10.5))
-                        .foregroundColor(Theme.ink3)
-                        .lineLimit(1)
-                }
             }
             Spacer(minLength: 6)
             Text(Theme.severityShortLabel(entry.severity))
@@ -603,20 +620,6 @@ struct EntryRow: View {
                         .foregroundColor(Theme.ink3)
                 )
         }
-    }
-
-    private var metaLine: String {
-        var parts: [String] = []
-        parts.append(entry.date.formatted(.dateTime.month(.abbreviated).day().hour().minute()))
-        if !entry.painDurationLabel.isEmpty { parts.append(entry.painDurationLabel.lowercased()) }
-        if !entry.treatmentLabel.isEmpty { parts.append(entry.treatmentLabel) }
-        return parts.joined(separator: " · ")
-    }
-
-    private var noteLine: String {
-        if !entry.notes.isEmpty { return entry.notes }
-        if entry.quick { return L("Draft — tap to finish the details.") }
-        return ""
     }
 
     private var accessibilityText: String {

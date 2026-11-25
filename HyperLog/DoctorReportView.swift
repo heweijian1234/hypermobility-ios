@@ -15,6 +15,9 @@ struct DoctorReportView: View {
     @State private var range = 1   // 0=7天 1=30天 2=All
     @State private var entries: [JointEntry] = EntryStore.load()
     @State private var pdfData: PDFAttachment?
+    @State private var showPaywall = false
+
+    @EnvironmentObject private var pro: ProStore
 
     private var ranged: [JointEntry] {
         switch range {
@@ -255,11 +258,21 @@ struct DoctorReportView: View {
 
     private var actions: some View {
         VStack(spacing: 10) {
+            if !pro.isPro {
+                HStack(spacing: 6) {
+                    ProBadge()
+                    Text("Exporting is part of Pro")
+                        .font(Theme.ui(11))
+                        .foregroundColor(Theme.ink2)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+            }
+
             Button {
-                sendToDoctor()
+                if pro.isPro { sendToDoctor() } else { showPaywall = true }
             } label: {
                 HStack(spacing: 8) {
-                    Image(systemName: "doc.text")
+                    Image(systemName: pro.isPro ? "doc.text" : "lock.fill")
                         .font(.system(size: 14, weight: .semibold))
                     Text("Send to doctor")
                         .font(Theme.ui(14.5, .semibold))
@@ -271,25 +284,28 @@ struct DoctorReportView: View {
             }
             .buttonStyle(.plain)
 
-            Menu {
-                Button {
-                    if let url = makeCSV() { share(url) }
+            if pro.isPro {
+                Menu {
+                    Button {
+                        if let url = makeCSV() { share(url) }
+                    } label: {
+                        Label("Spreadsheet (CSV)", systemImage: "tablecells")
+                    }
+                    Button {
+                        if let url = makeText() { share(url) }
+                    } label: {
+                        Label("Plain text", systemImage: "doc.plaintext")
+                    }
                 } label: {
-                    Label("Spreadsheet (CSV)", systemImage: "tablecells")
+                    otherFormatsLabel
                 }
+            } else {
                 Button {
-                    if let url = makeText() { share(url) }
+                    showPaywall = true
                 } label: {
-                    Label("Plain text", systemImage: "doc.plaintext")
+                    otherFormatsLabel
                 }
-            } label: {
-                HStack(spacing: 4) {
-                    Text("Other formats")
-                        .font(Theme.ui(12, .semibold))
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 9, weight: .bold))
-                }
-                .foregroundColor(Theme.accent)
+                .buttonStyle(.plain)
             }
 
             Text("Summary, per-area chart, daily trend, latest Beighton score and the full episode list — photos included.")
@@ -302,6 +318,17 @@ struct DoctorReportView: View {
         }
         .padding(.horizontal, 18)
         .padding(.top, 18)
+        .sheet(isPresented: $showPaywall) { PaywallView().environmentObject(pro) }
+    }
+
+    private var otherFormatsLabel: some View {
+        HStack(spacing: 4) {
+            Text("Other formats")
+                .font(Theme.ui(12, .semibold))
+            Image(systemName: "chevron.down")
+                .font(.system(size: 9, weight: .bold))
+        }
+        .foregroundColor(Theme.accent)
     }
 
     private func sendToDoctor() {
