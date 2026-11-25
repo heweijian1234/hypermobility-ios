@@ -71,7 +71,7 @@ struct ContentView: View {
                     onSave: { entry in save(entry) },
                     onDetails: { entry in pendingDetails = entry }
                 )
-                .presentationDetents([.height(560), .large])
+                .presentationDetents([.height(480), .large])
                 .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showEditor, onDismiss: {
@@ -238,9 +238,7 @@ struct ContentView: View {
     private func dayColumn(_ bucket: (date: Date, count: Int, peak: Int)) -> some View {
         let isToday = Calendar.current.isDateInToday(bucket.date)
         let isSelected = selectedDay.map { Calendar.current.isDate($0, inSameDayAs: bucket.date) } ?? false
-        let height = bucket.count == 0
-            ? 5.0
-            : min(14.0 + Double(bucket.peak) * 7.0 + Double(min(bucket.count, 3)) * 4.0, 40.0)
+        let height = barHeight(bucket)
         let fill = bucket.count == 0 ? Theme.hair : Theme.severityColor(max(bucket.peak, 0))
         return Button {
             selectedDay = isSelected ? nil : bucket.date
@@ -265,6 +263,19 @@ struct ContentView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    /// 柱高只编码「当天次数」相对本周峰值，颜色编码严重度。
+    /// 旧公式把严重度也算进高度，导致「一天 3 条以上」全部顶格——柱子看着一模一样，看不出规律。
+    private var weekMaxCount: Int {
+        max(weekBuckets.map { $0.count }.max() ?? 0, 1)
+    }
+
+    private func barHeight(_ bucket: (date: Date, count: Int, peak: Int)) -> CGFloat {
+        guard bucket.count > 0 else { return 5 }
+        let ratio = Double(bucket.count) / Double(weekMaxCount)
+        // sqrt：让 1 条与 5 条的区别在小屏上也看得出来，又不至于让 1 条看起来像半根
+        return CGFloat(8 + sqrt(ratio) * 32)
     }
 
     private var sectionHeadRow: some View {
